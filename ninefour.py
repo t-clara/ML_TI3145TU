@@ -32,8 +32,8 @@ census_labels = np.genfromtxt("data/census_labels.csv", delimiter=',', skip_head
 census_unknown = np.genfromtxt("data/census_unknown.csv", delimiter=',', skip_header=1)
 
 '''
-#X = pd.read_csv('data\census_train.csv', sep=',', header=0)
-#y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
+X = pd.read_csv('data\census_train.csv', sep=',', header=0)
+y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
 #X = pd.read_csv(r"C:\Users\thiba\Downloads\Running\data\census_train.csv", sep=',', header=0)
 #y = pd.read_csv(r"C:\Users\thiba\Downloads\Running\data\census_labels.csv", sep=',', header=0)
 
@@ -45,7 +45,7 @@ census_unknown = np.genfromtxt("data/census_unknown.csv", delimiter=',', skip_he
 
 class USdata:
     '''Class to operate on the 1994 data'''
-    def __init__(self, X = pd.read_csv(r"C:\Users\thiba\Downloads\Running\data\census_train.csv", sep=',', header=0), y = pd.read_csv(r"C:\Users\thiba\Downloads\Running\data\census_labels.csv", sep=',', header=0), random_state: int = 42) -> None:
+    def __init__(self, X=X, y=y, random_state: int = 42) -> None:
         '''Initializer to read the data'''
         self.random_state = random_state
         self.X = X
@@ -104,10 +104,21 @@ class USdata:
 
         #Standardize- age, education-num and hours-per-week columns
         #Does not affect the dummy classifier
+        sc = StandardScaler(with_mean=with_mean)
+        train_col_scale = self.X[['age','education-num','hours-per-week']]
+        train_scaler_col = sc.fit_transform(train_col_scale)
+        train_scaler_col = pd.DataFrame(train_scaler_col,columns=train_col_scale.columns)
+
+        self.X['age']= train_scaler_col['age']
+        self.X['education-num']= train_scaler_col['education-num']
+        self.X['hours-per-week']= train_scaler_col['hours-per-week']
+
+        '''
         categories = ['age', 'education-num', 'hours-per-week']
         for cat in categories:
             sc = StandardScaler(with_mean=with_mean)
             self.X[cat] = sc.fit_transform(self.X[[cat]])
+        '''
 
         #Tabulating the rest of the tables as binary
         # Categorical classes are converted to columns with name
@@ -169,6 +180,7 @@ class USdata:
             self.y_cv = self.y_cv.to_numpy().ravel()
 
 
+'''
 def main():
     us = USdata()
     us.data_information(False)
@@ -185,3 +197,4 @@ def main():
 
 if __name__ == main():
     main()
+'''

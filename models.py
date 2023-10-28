@@ -226,11 +226,10 @@ class SVCClassification:
         best_model = gs.best_estimator_
         best_score = gs.best_score_
         best_param = gs.best_params_
-        print(best_param)
 
         #Printing the result
         print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
-        self.model = SVC(best_param)
+        self.model = best_model
         print(f"INFO: {str(self)}")
         print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
 
@@ -303,7 +302,7 @@ class SVCClassification:
         infer_time.append(infer_time_stop - infer_time_start)
 
         print(f"STATUS: *** CHECKING ACCURACY ON TEST SET ***")
-        test_accuracy = accuracy_score(test_predictions, self.y_test)
+        test_accuracy = accuracy_score(self.y_test, test_predictions)
          
         # Report Performance
         print(f'INFO: Accuracy (SVCClassification) = {test_accuracy}')
@@ -324,7 +323,7 @@ class SVCClassification:
         
 class SGDClassification:
     '''SGD Classifier Common Class'''
-    def __init__(self, X, y, X_train, y_train, X_other, y_other, loss: str = 'log_loss', 
+    def __init__(self, X, y, X_train, y_train, X_test, y_test, X_cv, y_cv, loss: str = 'log_loss', 
                  penalty: str | None = 'l2', alpha: float = 0.0001, 
                  max_iter: int = 1000, learning_rate: str = 'constant', eta0: float = 0.1, 
                  random_state: int = 42, warm_start: bool = True) -> None:
@@ -332,8 +331,10 @@ class SGDClassification:
         self.y = y
         self.X_train = X_train
         self.y_train = y_train
-        self.X_other = X_other
-        self.y_other = y_other
+        self.X_test = X_test
+        self.y_test = y_test
+        self.X_cv = X_cv
+        self.y_cv = y_cv
         self.loss = loss
         self.penalty = penalty
         self.alpha = alpha
@@ -342,100 +343,230 @@ class SGDClassification:
         self.eta0 = eta0
         self.random_state = random_state
         self.warm_start = warm_start
-        self.model = SGDClassifier(loss=self.loss, penalty=self.penalty, alpha=self.alpha, max_iter=self.max_iter, random_state=self.random_state, learning_rate=self.learning_rate, eta0=self.eta0, warm_start=self.warm_start)
+        self.model = SGDClassifier(loss=self.loss, penalty=self.penalty, alpha=self.alpha, max_iter=self.max_iter, \
+                                    random_state=self.random_state, learning_rate=self.learning_rate, \
+                                      eta0=self.eta0, warm_start=self.warm_start)
+        self.best = None
     
     def __str__(self) -> str:
         '''Str representation of SGD'''
-        return f'INFO: SGD with alpha = {self.alpha}, eta0 = {self.eta0}, penalty = {self.penalty}, max_iter = {self.max_iter}'
+        return f'SGD with alpha = {self.alpha}, eta0 = {self.eta0}, penalty = {self.penalty}, max_iter = {self.max_iter}'
     
-    def optimize(self):
+    def optimize(self, further_optimize: bool = False):
         '''Optimizes the SGD model'''
+        if further_optimize:
+            #TODO RETRIEVE ALL OF THE PARAMS AND SEARCH DEEPER
+            retrieve_params = self.model.get_params()
+            #Tuning parameters
+            alpha_list = np.logspace(-4, 4, num=9).tolist() + [0]
+            eta0_list = np.logspace(-4, 4, num=9).tolist()
+            penalty_list = ['l1', 'l2', None]
+            max_iter_list = [int(x) for x in np.logspace(2, 5, num=4).tolist()]
 
-        #Tuning parameters
-        alpha_list = np.logspace(-5, 1, num=7).tolist()
-        eta0_list = np.logspace(-5, 1, num=7).tolist()
-        penalty_list = ['l1', 'l2', 'none']
-        max_iter_list = np.logspace(1, 3, num=3).tolist()
+            sgdgs_params = {
+            'alpha': alpha_list,
+            'eta0': eta0_list,
+            'penalty': penalty_list,
+            'max_iter': max_iter_list,
+            'loss': ['log_loss'],
+            'random_state': [self.random_state],
+            'learning_rate': [self.learning_rate],
+            'warm_start': [self.warm_start]
+            }
+            
+            #Local sgd and grid search algorithms
+            local_sgd = SGDClassifier()
+            gs = GridSearchCV(local_sgd, sgdgs_params, cv=5, verbose=10, n_jobs=-1,  error_score='raise', return_train_score=True)
 
-        sgdgs_params = {
-        'alpha': alpha_list,
-        'eta0': eta0_list,
-        'penalty': penalty_list,
-        'max_iter': max_iter_list,
-        'loss': [self.loss],
-        'random_state': [self.random_state],
-        'learning_rate': [self.learning_rate],
-        'warm_start': [self.warm_start]
-        }
-        
-        #Local sgd and grid search algorithms
-        local_sgd = SGDClassifier()
-        gs = GridSearchCV(local_sgd, sgdgs_params, cv=5, verbose=2, n_jobs=1)
+            infer_time = []
+            #Setting up the optimization with GridSearch
+            infer_time_start = time.perf_counter()
+            gs.fit(self.X_train, self.y_train)
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
 
-        infer_time = []
-        #Setting up the optimization with GridSearch
-        infer_time_start = time.perf_counter()
-        gs.fit(self.X, self.y)
-        infer_time_stop = time.perf_counter()
-        infer_time.append(infer_time_stop - infer_time_start)
+            #Optimization info
+            self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
 
-        #Optimization info
-        self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
+            #Finding the most optimal
+            best_model = gs.best_estimator_
+            best_score = gs.best_score_
+            best_param = gs.best_params_
 
-        #Finding the most optimal
-        best_model = gs.best_estimator_
-        best_score = gs.best_score_
-        best_param = gs.best_params_
+            #Printing the result
+            print('\n===========================')
+            print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
+            #self.model = SGDClassifier(best_param)
+            print(f"INFO: {str(self)}")
+            print(f'INFO: The model scored {best_score} with a 5 split CV')
+            print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
+                {np.mean(self.optimize_info['mean_fit_time'])} and the\
+                mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
+            print(f'INFO: Setting the best model as a class attribute')
+            self.model = best_model
+            print('===========================\n')
+        else:
+            #Tuning parameters
+            alpha_list = np.logspace(-4, 4, num=9).tolist() + [0]
+            eta0_list = np.logspace(-4, 4, num=9).tolist()
+            penalty_list = ['l1', 'l2', None]
+            max_iter_list = [int(x) for x in np.logspace(2, 5, num=4).tolist()]
 
-        #Printing the result
-        print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
-        self.model = SGDClassifier(**best_param)
-        print(f"INFO: {str(self)}")
-        print(f'The model scored {best_score} with a 5 split CV')
+            sgdgs_params = {
+            'alpha': alpha_list,
+            'eta0': eta0_list,
+            'penalty': penalty_list,
+            'max_iter': max_iter_list,
+            'loss': ['log_loss'],
+            'random_state': [self.random_state],
+            'learning_rate': [self.learning_rate],
+            'warm_start': [self.warm_start]
+            }
+            
+            #Local sgd and grid search algorithms
+            local_sgd = SGDClassifier()
+            gs = GridSearchCV(local_sgd, sgdgs_params, cv=5, verbose=10, n_jobs=-1,  error_score='raise', return_train_score=True)
 
-    def train(self, n_batches: int = 200) -> None:
+            infer_time = []
+            #Setting up the optimization with GridSearch
+            infer_time_start = time.perf_counter()
+            gs.fit(self.X_train, self.y_train)
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
+
+            #Optimization info
+            self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
+
+            #Finding the most optimal
+            best_model = gs.best_estimator_
+            best_score = gs.best_score_
+            best_param = gs.best_params_
+
+            #Printing the result
+            print('\n===========================')
+            print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
+            #self.model = SGDClassifier(best_param)
+            print(f"INFO: {str(self)}")
+            print(f'INFO: The model scored {best_score} with a 5 split CV')
+            print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
+                {np.mean(self.optimize_info['mean_fit_time'])} and the\
+                mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
+            print(f'INFO: Setting the best model as a class attribute')
+            self.model = best_model
+            print('===========================\n')
+
+    def train(self, n_batches: int = 300, show_loss: bool = True, show_acc: bool = False) -> None:
         '''Train the SGD classifier with the best parameter'''
+        
+        print('\n===========================')
+        input_val = bool(input('Enter True to check with CV, False to check with Test\n'))
+        print('===========================\n')
 
         #Disclaimers
         print(f"CAUTION: You have just called .train() for SGDClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
 
+        if input_val:
+            infer_time, sgd_train_loss, sgd_other_loss = [], [], []
+            sgd_train_score, sgd_other_score = [], []
+            # Infer Time Start
+            with alive_bar(len(range(n_batches))) as bar:
+                for _ in range(n_batches):
+                    infer_time_start = time.perf_counter()
 
-        infer_time, sgd_train_loss, sgd_other_loss = [], [], []
-        sgd_train_score, sgd_other_score = [], []
-        # Infer Time Start
-        with alive_bar(range(n_batches)) as bar:
-            for _ in range(n_batches):
-                infer_time_start = time.perf_counter()
+                    # Model Construction
+                    self.model.partial_fit(self.X_train, self.y_train, classes = np.unique(self.y_train))
+                    
+                    # Infer Time Stop
+                    infer_time_stop = time.perf_counter()
+                    infer_time.append(infer_time_stop - infer_time_start)
+                    
+                    # Training Data:
+                    train_predictions = self.model.predict(self.X_train)
+                    train_predictions_proba = self.model.predict_proba(self.X_train)
 
-                # Model Construction
-                self.model.partial_fit(self.X_train, self.y_train)
-                
-                # Infer Time Stop
-                infer_time_stop = time.perf_counter()
-                infer_time.append(infer_time_stop - infer_time_start)
-                
-                # Training Data:
-                train_predictions = self.model.predict(self.X_train)
-                train_predictions_proba = self.model.predict_proba(self.X_train)
+                    sgd_train_loss.append(log_loss(self.y_train, train_predictions_proba))
+                    sgd_train_score.append(1 - accuracy_score(self.y_train, train_predictions))
 
-                sgd_train_loss.append(log_loss(self.y_train, train_predictions_proba))
-                sgd_train_score.append(accuracy_score(self.y_train, train_predictions))
+                    # Other Data
+                    other_predictions = self.model.predict(self.X_cv)
+                    other_predictions_proba = self.model.predict_proba(self.X_cv)
 
-                # Other Data
-                other_predictions = self.model.predict(self.X_other)
-                other_predictions_proba = self.model.predict_proba(self.X_other)
+                    sgd_other_loss.append(log_loss(self.y_cv, other_predictions_proba))
+                    sgd_other_score.append(1 - accuracy_score(self.y_cv, other_predictions))
 
-                sgd_other_loss.append(log_loss(self.y_other, other_predictions_proba))
-                sgd_other_score.append(accuracy_score(self.y_other, other_predictions))
+                    #Bar settings
+                    time.sleep(.005)
+                    bar()
 
-                #Bar settings
-                time.sleep(.005)
-                bar()
+            infer_time_average = np.mean(infer_time)
+            print(f'INFO: Mean Accuracy (SGDClassification) = {np.mean(sgd_other_score)}')
+            print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+            if show_loss:
+                plt.plot(sgd_train_loss, label = 'Train Log Loss')
+                plt.plot(sgd_other_loss, label = 'Validation Log Loss')
+                plt.xlabel('Batch Number')
+                plt.ylabel('Log Losses')
+                plt.legend()
+                plt.show()
+            if show_acc:
+                plt.plot(sgd_train_score, label = 'Train Error Rate')
+                plt.plot(sgd_other_score, label = 'Validation Error Rate')
+                plt.xlabel('Batch Number')
+                plt.ylabel('Error Rate')
+                plt.legend()
+                plt.show()
+        else:
+            infer_time, sgd_train_loss, sgd_other_loss = [], [], []
+            sgd_train_score, sgd_other_score = [], []
+            # Infer Time Start
+            with alive_bar(len(range(n_batches))) as bar:
+                for _ in range(n_batches):
+                    infer_time_start = time.perf_counter()
 
-        infer_time_average = np.mean(infer_time)
-        print(f'INFO: Mean Accuracy (SGDClassification) = {np.mean(sgd_other_score)}')
-        print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+                    # Model Construction
+                    self.model.partial_fit(self.X_train, self.y_train, classes = np.unique(self.y_train))
+                    
+                    # Infer Time Stop
+                    infer_time_stop = time.perf_counter()
+                    infer_time.append(infer_time_stop - infer_time_start)
+                    
+                    # Training Data:
+                    train_predictions = self.model.predict(self.X_train)
+                    train_predictions_proba = self.model.predict_proba(self.X_train)
+
+                    sgd_train_loss.append(log_loss(self.y_train, train_predictions_proba))
+                    sgd_train_score.append(1 - accuracy_score(self.y_train, train_predictions))
+
+                    # Other Data
+                    other_predictions = self.model.predict(self.X_test)
+                    other_predictions_proba = self.model.predict_proba(self.X_test)
+
+                    sgd_other_loss.append(log_loss(self.y_test, other_predictions_proba))
+                    sgd_other_score.append(1 - accuracy_score(self.y_test, other_predictions))
+
+                    #Bar settings
+                    time.sleep(.005)
+                    bar()
+
+            infer_time_average = np.mean(infer_time)
+            print(f'INFO: Mean Accuracy (SGDClassification) = {np.mean(sgd_other_score)}')
+            print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+
+            if show_loss:
+                plt.plot(sgd_train_loss, label = 'Train Log Loss')
+                plt.plot(sgd_other_loss, label = 'Test Log Loss')
+                plt.xlabel('Batch Number')
+                plt.ylabel('Log Losses')
+                plt.legend()
+                plt.show()
+            if show_acc:
+                plt.plot(sgd_train_score, label = 'Train Error Rate')
+                plt.plot(sgd_other_score, label = 'Test Error Rate')
+                plt.xlabel('Batch Number')
+                plt.ylabel('Error Rate')
+                plt.legend()
+                plt.show()
         
         
 class Data_PCA:

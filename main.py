@@ -24,7 +24,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import log_loss, accuracy_score
 import numpy as np
-from beautifultable import BeautifulTable
 
 ########################################
 #                                      #
@@ -33,7 +32,7 @@ from beautifultable import BeautifulTable
 ########################################
 
 import mnist, ninefour
-from models import KNeighborsClassification, Data_PCA, DecisionTreeClassification, SVCClassification
+from models import KNeighborsClassification, Data_PCA, DecisionTreeClassification, SVCClassification, SGDClassification
 
 ########################################
 #                                      #
@@ -62,10 +61,10 @@ KNN_MNIST_8x8.CV_tune_K
 
 us = ninefour.USdata()
 us.data_information(False)
+us.preprocess(with_mean=True)
 us.remove_nan()
-us.preprocess(with_mean=False)
-us.split(test_size=0.20, cv_size=0.10)
-col = us.get_columns()
+us.split(test_size=0.20, cv_size=0.20)
+#col = us.get_columns()
 #print(col)
 us.tonumpy()
 
@@ -85,9 +84,9 @@ us.tonumpy()
 
 ### SUPPORT VECTOR MACHINE ###
 
-svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-svm.optimize()
-svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
+#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#svm.optimize()
+#svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 ### DECISION TREE ###
 
@@ -95,6 +94,14 @@ svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 #dt.optimize(us.X_train, us.y_train, us.X_test, us.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.train(us.X_train, us.y_train, col)
+
+sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+sgd.optimize()
+sgd.train(show_loss=True, show_acc=False)
+
+#svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#svc.optimize()
+#svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 class Compare:
     def __init__(self, dummy_model, KNN_model, SVC_model, DT_model, SGD_model) -> None:
