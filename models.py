@@ -618,11 +618,9 @@ class Data_PCA:
             n_pcs = pca.components_.shape[0]
 
             #Get the index of most important feature
-            most_imp = [sorted(np.abs(pca.components_[i]), reverse=True) for i in range(n_pcs)]
-            most_imp_argmax = [np.abs(pca.components_[i]).argmax() for i in range(n_pcs)]
-            most_imp_names = [(most_imp_argmax[i], initial_labels[most_imp[i][1]])  for i in range(n_pcs)]
-            dic = {'PC{}'.format(i+1): most_imp_names[i] for i in range(n_pcs)}
-            print(dic)
+            descending_order = [np.argsort(np.abs(pca.components_[i])).tolist()[::-1] for i in range(n_pcs)]
+            most_imp_names = [[initial_labels[i] for i in descending_order[j]] for j in range(n_pcs)]
+            print([x[:3] for x in most_imp_names])
 
         else:
             print(f'CAUTION: You have not run plot components() yet! Visually confirm the elbow first.')
