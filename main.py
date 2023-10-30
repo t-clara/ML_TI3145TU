@@ -24,6 +24,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import log_loss, accuracy_score
 import numpy as np
+import matplotlib.pyplot as plt
 
 ########################################
 #                                      #
@@ -137,28 +138,49 @@ svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 #svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 class Compare:
-    def __init__(self, dummy_model, KNN_model, SVC_model, DT_model, SGD_model) -> None:
+    def __init__(self, dummy_model, DT_model, KNN_model, SVC_model, SGD_model) -> None:
         self.dummy_model = dummy_model
+        self.DT_model = DT_model
         self.KNN_model = KNN_model
         self.SVC_model = SVC_model
-        self.DT_model = DT_model
         self.SGD_model = SGD_model
 
     def tabulate(self):
         comparison_table = BeautifulTable()
         comparison_table.columns.header = ["Algorithm", "Test Accuracy", "Average Training Time", "Average Inference Time"]
-        comparison_table.rows.append(
-            ['Dummy (Baseline)', self.dummy_model.accuracy_test, self.dummy_model.training_time, self.dummy_model.inference_time],
-            ['KNN', self.KNN_model.accuracy_test, self.KNN_model.training_time, self.KNN_model.inference_time],
-            ['SVC', self.SVC_model.accuracy_test, self.SVC_model.training_time, self.SVC_model.inference_time],
-            ['DT', self.DT_model.accuracy_test, self.DT_model.training_time, self.DT_model.inference_time],
-            ['SGD', self.SGD_model.accuracy_test, self.DT_model.training_time, self.DT_model.inference_time]                                     
-                                     )
+        comparison_table.rows.append(['Dummy (Baseline)', self.dummy_model.accuracy_train, self.dummy_model.training_time, self.dummy_model.inference_time])
+        comparison_table.rows.append(['DT', self.DT_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])
+        comparison_table.rows.append(['SGD', self.SGD_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])    
+        comparison_table.rows.append(['KNN', self.KNN_model.accuracy_train, self.KNN_model.training_time, self.KNN_model.inference_time])
+        comparison_table.rows.append(['SVC', self.SVC_model.accuracy_train, self.SVC_model.training_time, self.SVC_model.inference_time])
         print(comparison_table)
 
 
-    def bar_charts(self):
-        # Plot all column space comparatively. 
-        pass
+    def bar_chart_accuracies(self):
+        model_types = ("DT", "SGD", "KNN", "SVC")
+        ### REQUIRES IMPLEMENTATION OF MODEL ATTRIBUTES IN models.py ###
+        model_accuracies = {
+            'Training Accuracy': (self.DT_model.accuracy_train, self.SGD_model.accuracy_train, self.KNN_model.accuracy_train, self.SVC_model.accuracy_train),
+            'Validation Accuracy': (self.DT_model.accuracy_val, self.SGD_model.accuracy_val, self.KNN_model.accuracy_val, self.SVC_model.accuracy_val)
+        }
 
-#compare = Compare(KNN_model=, SVC_model=, DT_model=, SGD_model=)
+        x = np.arange(len(model_types))  # the label locations
+        width = 0.25  # the width of the bars
+        multiplier = 0
+
+        fig, ax = plt.subplots(layout='constrained')
+
+        for attribute, measurement in model_accuracies.items():
+            offset = width * multiplier
+            rects = ax.bar(x + offset, measurement, width, label=attribute)
+            ax.bar_label(rects, padding=3)
+            multiplier += 1
+
+        # Add some text for labels, title and custom x-axis tick labels, etc.
+        ax.set_ylabel('Accuracies')
+        ax.set_title('Model Accuracies')
+        ax.set_xticks(x + width, model_types)
+        ax.legend(loc='upper left', ncols=3)
+        ax.set_ylim(0, 250)
+
+        plt.show()
