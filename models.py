@@ -29,6 +29,7 @@ from alive_progress import alive_bar
 import time
 import numpy as np
 import numpy.typing as npt
+from numpy.random import uniform
 import matplotlib.pyplot as plt
 import itertools
 from beautifultable import BeautifulTable
@@ -99,7 +100,6 @@ class KNeighborsClassification:
     def __str__(self) -> str:
         return f"KNeighborsClassifier(n_neighbors={self.n_neighbors}, weights={self.weights})"
 
-#MISSING THE MODEL UPDATE
     def optimize(self, max_n_neighbors: int, n_folds: int = 5) -> None:
 
         validation_accuracy = []
@@ -346,6 +346,8 @@ class SGDClassification:
         self.model = SGDClassifier(loss=self.loss, penalty=self.penalty, alpha=self.alpha, max_iter=self.max_iter, \
                                     random_state=self.random_state, learning_rate=self.learning_rate, \
                                       eta0=self.eta0, warm_start=self.warm_start)
+        self.cv_accuracy: list[float] = []
+        self.optimal_models = []
     
     def __str__(self) -> str:
         '''Str representation of SGD'''
@@ -354,13 +356,17 @@ class SGDClassification:
     def optimize(self, further_optimize: bool = False):
         '''Optimizes the SGD model'''
         if further_optimize:
-            #TODO RETRIEVE ALL OF THE PARAMS AND SEARCH DEEPER
-            retrieve_params = self.model.get_params()
+            optimal_parameters = self.model.get_params()
             #Tuning parameters
-            alpha_list = np.logspace(-4, 4, num=9).tolist() + [0]
-            eta0_list = np.logspace(-4, 4, num=9).tolist()
-            penalty_list = ['l1', 'l2', None]
-            max_iter_list = [int(x) for x in np.logspace(2, 5, num=4).tolist()]
+            margin = 0.20
+            n_points = 5
+            alpha_lower, alpha_upper = (1-margin) * optimal_parameters['alpha'], (1+margin) * optimal_parameters['alpha']
+            alpha_list = np.linspace(alpha_lower, alpha_upper, n_points).tolist()
+            eta0_lower, eta0_upper = (1-margin) * optimal_parameters['eta0'], (1+margin) * optimal_parameters['eta0']
+            eta0_list = np.linspace(eta0_lower, eta0_upper, n_points).tolist()
+            penalty_list = [optimal_parameters['penalty']]
+            max_iter_lower, max_iter_upper = (1-margin) * optimal_parameters['max_iter'], (1+margin) * optimal_parameters['max_iter']
+            max_iter_list = [int(x) for x in np.linspace(max_iter_lower, max_iter_upper, n_points)]
 
             sgdgs_params = {
             'alpha': alpha_list,
@@ -394,15 +400,15 @@ class SGDClassification:
 
             #Printing the result
             print('\n===========================')
-            print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
-            #self.model = SGDClassifier(best_param)
+            self.penalty, self.alpha, self.max_iter, self.eta0 = best_param['penalty'], best_param['alpha'], best_param['max_iter'], best_param['eta0']
+            self.model = best_model
+            self.optimal_models.append(best_param)
             print(f"INFO: {str(self)}")
             print(f'INFO: The model scored {best_score} with a 5 split CV')
             print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
                 {np.mean(self.optimize_info['mean_fit_time'])} and the\
                 mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
             print(f'INFO: Setting the best model as a class attribute')
-            self.model = best_model
             print('===========================\n')
         else:
             #Tuning parameters
@@ -444,14 +450,16 @@ class SGDClassification:
             #Printing the result
             print('\n===========================')
             print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
-            #self.model = SGDClassifier(best_param)
+            self.penalty, self.alpha, self.max_iter, self.eta0 = best_param['penalty'], best_param['alpha'], best_param['max_iter'], best_param['eta0']
+            self.model = best_model
+            self.optimal_models.append(best_param)
             print(f"INFO: {str(self)}")
             print(f'INFO: The model scored {best_score} with a 5 split CV')
             print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
                 {np.mean(self.optimize_info['mean_fit_time'])} and the\
                 mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
             print(f'INFO: Setting the best model as a class attribute')
-            self.model = best_model
+            
             print('===========================\n')
 
     def train(self, n_batches: int = 300, show_loss: bool = True, show_acc: bool = False) -> None:
@@ -499,6 +507,7 @@ class SGDClassification:
                     bar()
 
             infer_time_average = np.mean(infer_time)
+            self.cv_accuracy.append(round((1 - np.mean(sgd_other_score))*100, 4))
             print(f'INFO: Mean Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')
             print(f'INFO: Average Inference Time (SGDClassification) = {infer_time_average}')
             if show_loss:
@@ -566,7 +575,16 @@ class SGDClassification:
                 plt.ylabel('Error Rate')
                 plt.legend()
                 plt.show()
-        
+    def display(self):
+        SGD_table = BeautifulTable()
+        SGD_table.columns.header = ["Model #", "CV Accuracy [%]", "penalty", "alpha", "max_iter", "eta0"]
+        SGD_table.rows.append(['Optimal SGD 1', self.cv_accuracy[0], f"{self.optimal_models[0]['penalty']}", f"{'{:.2e}'.format(self.optimal_models[0]['alpha'])}", self.optimal_models[0]['max_iter'], self.optimal_models[0]['eta0']])
+        SGD_table.rows.append(['Optimal SGD 2', self.cv_accuracy[1], f"{self.optimal_models[1]['penalty']}", f"{'{:.2e}'.format(self.optimal_models[1]['alpha'])}", self.optimal_models[1]['max_iter'], self.optimal_models[1]['eta0']])
+        print(SGD_table)    
+
+        print(f"alpha_1 = {'{:.2e}'.format(self.optimal_models[0]['alpha'])}")
+        print(f"alpha_2 = {'{:.2e}'.format(self.optimal_models[1]['alpha'])}")
+
 
 class Data_PCA:
     def __init__(self, data, n_components: int = 10, whiten = True, random_state: int = 42, threshold: float = 0.95) -> None:

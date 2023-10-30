@@ -69,7 +69,7 @@ us.data_information(False)
 us.preprocess(with_mean=True)
 us.remove_nan()
 #us.unique()
-us.split(test_size=0.4, cv_size=0.2)
+us.split(test_size=0.15, cv_size=0.15)
 us.tonumpy()
 
 ### K NEIGHBORS ###
@@ -92,9 +92,9 @@ us.tonumpy()
 
 ### SUPPORT VECTOR MACHINE ###
 
-svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-svm.optimize()
-svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
+#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#svm.optimize()
+#svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 ### DECISION TREE ###
 
@@ -103,9 +103,14 @@ svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.train(us.X_train, us.y_train, col)
 
-#sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+### SGD CLASSIFIER ###
+
+sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #sgd.optimize()
-#sgd.train(show_loss=False, show_acc=True)
+sgd.train(show_loss=False, show_acc=True)
+sgd.optimize(further_optimize=True)
+sgd.train(show_loss=False, show_acc=True)
+sgd.display()
 
 #svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()
