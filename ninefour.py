@@ -59,6 +59,10 @@ class USdata:
         print('\n and here are the corresponding labels')
         print(self.y)
     
+    def unique(self):
+        for cat in self.classes:
+            print(set(self.X[cat]))
+    
     def data_information(self, show_info: bool = True) -> None:
         '''Gathers information for the first classes'''
         self.classes = list(self.X.columns)
@@ -158,7 +162,7 @@ class USdata:
     def get_columns(self):
         if not isinstance(self.X, np.ndarray):
             return list(self.X.columns)
-        return f'Thhe type is not Pandas - Get scrubed'
+        return f'The type is not Pandas - Get scrubed'
  
     def tonumpy(self) -> None:
         '''Transform everything to Numpy Array'''
@@ -178,6 +182,7 @@ class USdata:
         if hasattr(self, 'X_cv'):
             self.X_cv = self.X_cv.to_numpy()
             self.y_cv = self.y_cv.to_numpy().ravel()
+    
 
 
 '''

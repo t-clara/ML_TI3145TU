@@ -568,10 +568,11 @@ class SGDClassification:
                 plt.legend()
                 plt.show()
         
-        
+
 class Data_PCA:
-    def __init__(self, X, n_components: int = 10, whiten = True, random_state: int = 42, threshold: float = 0.95) -> None:
-        self.X = X
+    def __init__(self, data, n_components: int = 10, whiten = True, random_state: int = 42, threshold: float = 0.95) -> None:
+        self.data = data
+        self.X = self.data.X
         self.n_components  = n_components
         self.whiten = whiten
         self.random_state = random_state
@@ -581,13 +582,13 @@ class Data_PCA:
     def plot_components(self) -> None:
         from sklearn.decomposition import PCA
         #Building the model
-        pca = PCA(self.threshold, whiten=self.whiten, random_state=self.random_state)
-        pca.fit(self.X)
+        self.pca = PCA(self.threshold, whiten=self.whiten, random_state=self.random_state)
+        self.pca.fit(self.X)
 
         #Finding the Elbow
         self.changed = True
-        self.copy_explained = pca.explained_variance_ratio_
-        self.components = pca.components_
+        self.copy_explained = self.pca.explained_variance_ratio_
+        self.components = self.pca.components_
         variance_summed = [sum(self.copy_explained[:i]) for i in range(1, len(self.copy_explained))]
         plt.title("PCA Analysis")
         plt.xlabel("Number of Principal Components (Descending Order)")
@@ -602,13 +603,27 @@ class Data_PCA:
         if self.changed:
             print(f'CAUTION: You are running n_components = {n_components} and not the class variable n_component = {self.n_components}')
 
+            #Getting headers
+            initial_labels = self.data.get_columns()
+
             pca = PCA(n_components, whiten=self.whiten, random_state=self.random_state)
             #Setting and transforming
-            self.X = pca.fit_transform(self.X)
+            self.data.X = pca.fit_transform(self.X)
             
             #Confirmation
             copy_explained = pca.explained_variance_ratio_
-            print(f'STATUS: Successfully fit and transformed the data set with explained variance of {copy_explained}')
+            print(f'STATUS: Successfully fit and transformed the data set with explained variance of {sum(copy_explained)}')
+
+            #Printing which features are kept
+            n_pcs = pca.components_.shape[0]
+
+            #Get the index of most important feature
+            most_imp = [sorted(np.abs(pca.components_[i]), reverse=True) for i in range(n_pcs)]
+            most_imp_argmax = [np.abs(pca.components_[i]).argmax() for i in range(n_pcs)]
+            most_imp_names = [(most_imp_argmax[i], initial_labels[most_imp[i][1]])  for i in range(n_pcs)]
+            dic = {'PC{}'.format(i+1): most_imp_names[i] for i in range(n_pcs)}
+            print(dic)
+
         else:
             print(f'CAUTION: You have not run plot components() yet! Visually confirm the elbow first.')
 

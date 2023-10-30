@@ -61,12 +61,16 @@ KNN_MNIST_8x8.CV_tune_K
 
 us = ninefour.USdata()
 us.data_information(False)
-us.preprocess(with_mean=True)
-us.remove_nan()
-us.split(test_size=0.20, cv_size=0.20)
 #col = us.get_columns()
 #print(col)
-us.tonumpy()
+#us.dummy(True)
+#us.display()
+#us.unique()
+us.preprocess(with_mean=True)
+us.remove_nan()
+#us.unique()
+#us.split(test_size=0.20, cv_size=0.20)
+#us.tonumpy()
 
 ### K NEIGHBORS ###
 
@@ -78,8 +82,11 @@ us.tonumpy()
 
 ### PRINCIPAL COMPONENT ANALYSIS ###
 
-#pca = Data_PCA(us.X, threshold=0.7)
-#pca.plot_components()
+pcamodel = Data_PCA(us, threshold=0.99999999999)
+pcamodel.plot_components()
+pcamodel.change_data(n_components=3)
+us.X = pcamodel.X
+#print(us.X)
 #us.X_cv
 
 ### SUPPORT VECTOR MACHINE ###
@@ -95,9 +102,9 @@ us.tonumpy()
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.train(us.X_train, us.y_train, col)
 
-sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-sgd.optimize()
-sgd.train(show_loss=True, show_acc=False)
+#sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#sgd.optimize()
+#sgd.train(show_loss=True, show_acc=False)
 
 #svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()
