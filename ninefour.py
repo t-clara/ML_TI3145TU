@@ -109,20 +109,32 @@ class USdata:
         #Standardize- age, education-num and hours-per-week columns
         #Does not affect the dummy classifier
         sc = StandardScaler(with_mean=with_mean)
-        train_col_scale = self.X[['age','education-num','hours-per-week']]
-        train_scaler_col = sc.fit_transform(train_col_scale)
+        train_col_scale = self.X_train[['age','education-num','hours-per-week']]
+        train_col_scale_test = self.X_test[['age','education-num','hours-per-week']]
+        train_col_scale_cv = self.X_cv[['age','education-num','hours-per-week']]
+        train_scaler_col = sc.fit(train_col_scale)
+        train_scaler_col = sc.transform(train_col_scale)
+        train_scaler_col_test = sc.transform(train_col_scale_test)
+        train_scaler_col_cv = sc.transform(train_col_scale_cv)
+
         train_scaler_col = pd.DataFrame(train_scaler_col,columns=train_col_scale.columns)
+        train_scaler_col_test = pd.DataFrame(train_scaler_col_test,columns=train_scaler_col_test.columns)
+        train_scaler_col_cv = pd.DataFrame(train_scaler_col_cv,columns=train_scaler_col_cv.columns)
 
-        self.X['age']= train_scaler_col['age']
-        self.X['education-num']= train_scaler_col['education-num']
-        self.X['hours-per-week']= train_scaler_col['hours-per-week']
+        # Switch Train
+        self.X_train['age']= train_scaler_col['age']
+        self.X_train['education-num']= train_scaler_col['education-num']
+        self.X_train['hours-per-week']= train_scaler_col['hours-per-week']
 
-        '''
-        categories = ['age', 'education-num', 'hours-per-week']
-        for cat in categories:
-            sc = StandardScaler(with_mean=with_mean)
-            self.X[cat] = sc.fit_transform(self.X[[cat]])
-        '''
+        # Switch Test
+        self.X_test['age']= train_scaler_col_test['age']
+        self.X_test['education-num']= train_scaler_col_test['education-num']
+        self.X_test['hours-per-week']= train_scaler_col_test['hours-per-week']
+
+        #Switch CV
+        self.X_cv['age']= train_scaler_col_cv['age']
+        self.X_cv['education-num']= train_scaler_col_cv['education-num']
+        self.X_cv['hours-per-week']= train_scaler_col_cv['hours-per-week']
 
         #Tabulating the rest of the tables as binary
         # Categorical classes are converted to columns with name

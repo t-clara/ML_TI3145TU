@@ -72,6 +72,18 @@ us.remove_nan()
 us.split(test_size=0.4, cv_size=0.2)
 us.tonumpy()
 
+# These are your training samples along with their labels
+X = mnist_8x8_train = np.load("data/mnist_train.npy")
+y = mnist_8x8_labels = np.load("data/mnist_train_labels.npy")
+
+# These are unknown instances that you should classifya
+mnist_unknown = np.load("data/mnist_unknown.npy")
+
+mn = mnist.MNIST(X, y)
+mn.split(test_size=0.15,cv_size=0.15)
+mn.preprocessing()
+
+
 ### K NEIGHBORS ###
 
 #KNN_US = KNeighborsClassification(X=us.X, y=us.y, 
@@ -92,9 +104,9 @@ us.tonumpy()
 
 ### SUPPORT VECTOR MACHINE ###
 
-svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-svm.optimize()
-svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
+#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#svm.optimize()
+#svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 ### DECISION TREE ###
 
@@ -103,9 +115,9 @@ svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.train(us.X_train, us.y_train, col)
 
-#sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-#sgd.optimize()
-#sgd.train(show_loss=False, show_acc=True)
+sgd = SGDClassification(mn.X, mn.y, mn.X_train, mn.y_train, mn.X_test, mn.y_test, mn.X_cv, mn.y_cv)
+sgd.optimize()
+sgd.train(show_loss=False, show_acc=True)
 
 #svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()
