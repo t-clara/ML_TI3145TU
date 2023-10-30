@@ -575,6 +575,7 @@ class SGDClassification:
                 plt.ylabel('Error Rate')
                 plt.legend()
                 plt.show()
+                
     def display(self):
         SGD_table = BeautifulTable()
         SGD_table.columns.header = ["Model #", "CV Accuracy [%]", "penalty", "alpha", "max_iter", "eta0"]
