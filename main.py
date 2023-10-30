@@ -67,8 +67,21 @@ us.data_information(False)
 #us.display()
 #us.unique()
 us.split(test_size=0.15, cv_size=0.15)
-us.preprocess(with_mean=True)
-us.remove_nan()
+pcamodel = Data_PCA(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv, threshold=0.99)
+pcamodel.preprocess()
+pcamodel.remove_nan()
+pcamodel.plot_components()
+pcamodel.change_data(n_components=1)
+us.X = pcamodel.X
+us.y = pcamodel.y
+us.X_train = pcamodel.X_train
+us.y_train = pcamodel.y_train
+us.X_test = pcamodel.X_test
+us.y_test = pcamodel.y_test
+us.X_cv = pcamodel.X_cv
+us.y_cv = pcamodel.y_cv
+#us.preprocess(with_mean=True)
+#us.remove_nan()
 #us.unique()
 us.tonumpy()
 
@@ -96,19 +109,14 @@ mn.preprocessing()
 
 ### PRINCIPAL COMPONENT ANALYSIS ###
 
-#pcamodel = Data_PCA(us, threshold=0.99999999999)
-#pcamodel.plot_components()
-
-#pcamodel.change_data(n_components=3)
-#us.X = pcamodel.X
 #print(us.X)
 #us.X_cv
 
 ### SUPPORT VECTOR MACHINE ###
 
-#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-#svm.optimize()
-#svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
+svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+svm.optimize()
+svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 ### DECISION TREE ###
 
@@ -117,12 +125,12 @@ mn.preprocessing()
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.train(us.X_train, us.y_train, col)
 
-sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-sgd.optimize()
-sgd.train(show_loss=False, show_acc=True)
-sgd.optimize(further_optimize=True)
-sgd.train(show_loss=False, show_acc=True)
-sgd.display()
+#sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#sgd.optimize()
+#sgd.train(show_loss=False, show_acc=True)
+#sgd.optimize(further_optimize=True)
+#sgd.train(show_loss=False, show_acc=True)
+#sgd.display()
 
 #svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()

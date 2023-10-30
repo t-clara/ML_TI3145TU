@@ -19,6 +19,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.linear_model import SGDClassifier
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import log_loss, accuracy_score
@@ -29,10 +30,10 @@ from alive_progress import alive_bar
 import time
 import numpy as np
 import numpy.typing as npt
-from numpy.random import uniform
 import matplotlib.pyplot as plt
 import itertools
 from beautifultable import BeautifulTable
+import pandas as pd
 
 ########################################
 #                                      #
@@ -462,7 +463,7 @@ class SGDClassification:
             
             print('===========================\n')
 
-    def train(self, n_batches: int = 300, show_loss: bool = True, show_acc: bool = False) -> None:
+    def train(self, n_batches: int = 800, show_loss: bool = True, show_acc: bool = False) -> None:
         '''Train the SGD classifier with the best parameter'''
         
         print('\n===========================')
@@ -575,7 +576,7 @@ class SGDClassification:
                 plt.ylabel('Error Rate')
                 plt.legend()
                 plt.show()
-                
+
     def display(self):
         SGD_table = BeautifulTable()
         SGD_table.columns.header = ["Model #", "CV Accuracy [%]", "penalty", "alpha", "max_iter", "eta0"]
@@ -588,9 +589,15 @@ class SGDClassification:
 
 
 class Data_PCA:
-    def __init__(self, data, n_components: int = 10, whiten = True, random_state: int = 42, threshold: float = 0.95) -> None:
-        self.data = data
-        self.X = self.data.X
+    def __init__(self, X, y, X_train, y_train,  X_test, y_test, X_cv, y_cv, n_components: int = 10, whiten = True, random_state: int = 42, threshold: float = 0.95) -> None:
+        self.X = X
+        self.y = y
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
+        self.X_cv = X_cv
+        self.y_cv = y_cv
         self.n_components  = n_components
         self.whiten = whiten
         self.random_state = random_state
@@ -621,27 +628,91 @@ class Data_PCA:
         if self.changed:
             print(f'CAUTION: You are running n_components = {n_components} and not the class variable n_component = {self.n_components}')
 
-            #Getting headers
-            initial_labels = self.data.get_columns()
-
             pca = PCA(n_components, whiten=self.whiten, random_state=self.random_state)
             #Setting and transforming
-            self.data.X = pca.fit_transform(self.X)
-            
+            self.X_train = pca.fit(self.X_train).transform(self.X_train)
+            self.X_test = pca.transform(self.X_test)
+            self.X_cv = pca.transform(self.X_cv)
+
             #Confirmation
             copy_explained = pca.explained_variance_ratio_
             print(f'STATUS: Successfully fit and transformed the data set with explained variance of {sum(copy_explained)}')
 
-            #Printing which features are kept
-            n_pcs = pca.components_.shape[0]
 
+            '''
             #Get the index of most important feature
             descending_order = [np.argsort(np.abs(pca.components_[i])).tolist()[::-1] for i in range(n_pcs)]
+            print(len(descending_order))
             most_imp_names = [[initial_labels[i] for i in descending_order[j]] for j in range(n_pcs)]
             print([x[:3] for x in most_imp_names])
+            '''
 
         else:
             print(f'CAUTION: You have not run plot components() yet! Visually confirm the elbow first.')
 
     def __str__(self):
         return f"INFO: PCA with n_components = {self.n_components}"
+    
+    def preprocess(self, with_mean: bool = True) -> None:
+        '''Processes the categorical classes to binary
+        and income and sex to binary classes specifically'''
+
+        le = LabelEncoder()
+
+        # Changing sex to binary (female vs. male become binary states)
+        self.X['sex'] = le.fit_transform(self.X['sex'])
+
+        #Standardize- age, education-num and hours-per-week columns
+        #Does not affect the dummy classifier
+        self.X = pd.get_dummies(self.X, drop_first=True)
+        self.X_train = pd.get_dummies(self.X, drop_first=True)
+        self.X_test = pd.get_dummies(self.X, drop_first=True)
+        self.X_cv = pd.get_dummies(self.X, drop_first=True)
+
+    def remove_nan(self) -> None:
+        '''For any objects that include ?, they are deleted'''
+
+        # Concatinate labels and drop
+        total_concat = pd.DataFrame(pd.concat([self.X, self.y], axis=1))
+        train_concat = pd.DataFrame(pd.concat([self.X_train, self.y_train], axis=1))
+        test_concat = pd.DataFrame(pd.concat([self.X_train, self.y_test], axis=1))
+        cv_concat = pd.DataFrame(pd.concat([self.X_train, self.y_cv], axis=1))
+
+        #Removing ? from the data X
+        rows_to_drop = total_concat[total_concat.isin(['?']).any(axis=1)].index
+        total_concat = total_concat.drop(index=rows_to_drop)
+
+        #Removing NaN X
+        rows_to_drop_nan = total_concat[total_concat.isna().any(axis=1)].index
+        total_concat = total_concat.drop(index=rows_to_drop_nan)
+
+        #Removing ? from the data x_train
+        rows_to_drop_train = train_concat[train_concat.isin(['?']).any(axis=1)].index
+        train_concat = train_concat.drop(index=rows_to_drop_train)
+
+        #Removing NaN Train
+        rows_to_drop_nan_train = train_concat[train_concat.isna().any(axis=1)].index
+        train_concat = train_concat.drop(index=rows_to_drop_nan_train)
+
+
+        #Removing ? from the data Test
+        rows_to_drop_test = test_concat[test_concat.isin(['?']).any(axis=1)].index
+        test_concat = test_concat.drop(index=rows_to_drop_test)
+
+        #Removing NaN Test
+        rows_to_drop_nan_test = test_concat[test_concat.isna().any(axis=1)].index
+        test_concat = test_concat.drop(index=rows_to_drop_nan_test)
+
+        #Removing ? from the data CV
+        rows_to_drop_cv = cv_concat[cv_concat.isin(['?']).any(axis=1)].index
+        cv_concat = cv_concat.drop(index=rows_to_drop_cv)
+
+        #Removing NaN CV
+        rows_to_drop_nan_cv = cv_concat[cv_concat.isna().any(axis=1)].index
+        cv_concat = cv_concat.drop(index=rows_to_drop_nan_cv)
+
+        # Re-setting the variables
+        self.X, self.y = total_concat.iloc[:, :-1], total_concat.iloc[:, -1:]
+        self.X_train, self.y_train = train_concat.iloc[:, :-1], train_concat.iloc[:, -1:]
+        self.X_test, self.y_test = test_concat.iloc[:, :-1], test_concat.iloc[:, -1:]
+        self.X_cv, self.y_cv = cv_concat.iloc[:, :-1], cv_concat.iloc[:, -1:]

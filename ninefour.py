@@ -215,7 +215,7 @@ class USdata:
  
     def tonumpy(self) -> None:
         '''Transform everything to Numpy Array'''
-        print("CAUTION: Call .tonumpy() before .preprocess() and .split().")
+        print("CAUTION: Call .tonumpy() after .preprocess() and .split().")
 
         #For the general data
         self.X = self.X.to_numpy()
@@ -223,14 +223,17 @@ class USdata:
 
         #Check if the split is made
         if hasattr(self, 'X_train'):
-            self.X_train = self.X_train.to_numpy()
-            self.y_train = self.y_train.to_numpy().ravel()
-            self.X_test = self.X_test.to_numpy()
-            self.y_test = self.y_test.to_numpy().ravel()
+            if not isinstance(self.X_train, np.ndarray):
+                self.X_train = self.X_train.to_numpy()
+                self.y_train = self.y_train.to_numpy().ravel()
+            if not isinstance(self.X_test, np.ndarray):
+                self.X_test = self.X_test.to_numpy()
+                self.y_test = self.y_test.to_numpy().ravel()
 
         if hasattr(self, 'X_cv'):
-            self.X_cv = self.X_cv.to_numpy()
-            self.y_cv = self.y_cv.to_numpy().ravel()
+            if not isinstance(self.X_cv, np.ndarray):
+                self.X_cv = self.X_cv.to_numpy()
+                self.y_cv = self.y_cv.to_numpy().ravel()
     
 
 
