@@ -75,15 +75,50 @@ class USdata:
     def remove_nan(self) -> None:
         '''For any objects that include ?, they are deleted'''
 
-        #Removing ? from the data
+        #Removing ? from the data X
         rows_to_drop = self.X[self.X.isin(['?']).any(axis=1)].index
         self.X = self.X.drop(index=rows_to_drop)
         self.y = self.y.drop(index=rows_to_drop)
 
-        #Removing NaN
+        #Removing NaN X
         rows_to_drop_nan = self.X[self.X.isna().any(axis=1)].index
         self.X = self.X.drop(index=rows_to_drop_nan)
         self.y = self.y.drop(index=rows_to_drop_nan)
+
+        # Concatinate labels and drop
+        train_concat = pd.DataFrame(pd.concat([self.X_train, self.y_train], axis=1))
+        test_concat = pd.DataFrame(pd.concat([self.X_train, self.y_test], axis=1))
+        cv_concat = pd.DataFrame(pd.concat([self.X_train, self.y_cv], axis=1))
+
+        #Removing ? from the data x_train
+        rows_to_drop_train = train_concat[train_concat.isin(['?']).any(axis=1)].index
+        train_concat = train_concat.drop(index=rows_to_drop_train)
+
+        #Removing NaN Train
+        rows_to_drop_nan_train = train_concat[train_concat.isna().any(axis=1)].index
+        train_concat = train_concat.drop(index=rows_to_drop_nan_train)
+
+
+        #Removing ? from the data Test
+        rows_to_drop_test = test_concat[test_concat.isin(['?']).any(axis=1)].index
+        test_concat = test_concat.drop(index=rows_to_drop_test)
+
+        #Removing NaN Test
+        rows_to_drop_nan_test = test_concat[test_concat.isna().any(axis=1)].index
+        test_concat = test_concat.drop(index=rows_to_drop_nan_test)
+
+        #Removing ? from the data CV
+        rows_to_drop_cv = cv_concat[cv_concat.isin(['?']).any(axis=1)].index
+        cv_concat = cv_concat.drop(index=rows_to_drop_cv)
+
+        #Removing NaN CV
+        rows_to_drop_nan_cv = cv_concat[cv_concat.isna().any(axis=1)].index
+        cv_concat = cv_concat.drop(index=rows_to_drop_nan_cv)
+
+        # Re-setting the variables
+        self.X_train, self.y_train = train_concat.iloc[:, :-1], train_concat.iloc[:, -1:]
+        self.X_test, self.y_test = test_concat.iloc[:, :-1], test_concat.iloc[:, -1:]
+        self.X_cv, self.y_cv = cv_concat.iloc[:, :-1], cv_concat.iloc[:, -1:]
 
     def check_nan(self, X, y) -> None:
         '''Checking for NaN values'''
@@ -112,14 +147,13 @@ class USdata:
         train_col_scale = self.X_train[['age','education-num','hours-per-week']]
         train_col_scale_test = self.X_test[['age','education-num','hours-per-week']]
         train_col_scale_cv = self.X_cv[['age','education-num','hours-per-week']]
-        train_scaler_col = sc.fit(train_col_scale)
-        train_scaler_col = sc.transform(train_col_scale)
+        train_scaler_col = sc.fit_transform(train_col_scale)
         train_scaler_col_test = sc.transform(train_col_scale_test)
         train_scaler_col_cv = sc.transform(train_col_scale_cv)
 
         train_scaler_col = pd.DataFrame(train_scaler_col,columns=train_col_scale.columns)
-        train_scaler_col_test = pd.DataFrame(train_scaler_col_test,columns=train_scaler_col_test.columns)
-        train_scaler_col_cv = pd.DataFrame(train_scaler_col_cv,columns=train_scaler_col_cv.columns)
+        train_scaler_col_test = pd.DataFrame(train_scaler_col_test,columns=train_col_scale.columns)
+        train_scaler_col_cv = pd.DataFrame(train_scaler_col_cv,columns=train_col_scale.columns)
 
         # Switch Train
         self.X_train['age']= train_scaler_col['age']
@@ -140,6 +174,9 @@ class USdata:
         # Categorical classes are converted to columns with name
         # of categorical class with True or False value.
         self.X = pd.get_dummies(self.X, drop_first=True)
+        self.X_train = pd.get_dummies(self.X, drop_first=True)
+        self.X_test = pd.get_dummies(self.X, drop_first=True)
+        self.X_cv = pd.get_dummies(self.X, drop_first=True)
 
 
     def dummy(self, n_split: int = 10, test_size: float = 0.5, show_average: int = False) -> None:

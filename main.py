@@ -66,12 +66,13 @@ us.data_information(False)
 #us.dummy(True)
 #us.display()
 #us.unique()
-us.preprocess(with_mean=True)
+us.split(test_size=0.4, cv_size=0.2)
+us.preprocess(with_mean=False)
 us.remove_nan()
 #us.unique()
-us.split(test_size=0.4, cv_size=0.2)
 us.tonumpy()
 
+'''
 # These are your training samples along with their labels
 X = mnist_8x8_train = np.load("data/mnist_train.npy")
 y = mnist_8x8_labels = np.load("data/mnist_train_labels.npy")
@@ -82,6 +83,7 @@ mnist_unknown = np.load("data/mnist_unknown.npy")
 mn = mnist.MNIST(X, y)
 mn.split(test_size=0.15,cv_size=0.15)
 mn.preprocessing()
+'''
 
 
 ### K NEIGHBORS ###
@@ -115,8 +117,8 @@ mn.preprocessing()
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.train(us.X_train, us.y_train, col)
 
-sgd = SGDClassification(mn.X, mn.y, mn.X_train, mn.y_train, mn.X_test, mn.y_test, mn.X_cv, mn.y_cv)
-sgd.optimize()
+sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#sgd.optimize()
 sgd.train(show_loss=False, show_acc=True)
 
 #svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
