@@ -69,8 +69,8 @@ us.data_information(False)
 us.preprocess(with_mean=True)
 us.remove_nan()
 #us.unique()
-#us.split(test_size=0.20, cv_size=0.20)
-#us.tonumpy()
+us.split(test_size=0.4, cv_size=0.2)
+us.tonumpy()
 
 ### K NEIGHBORS ###
 
@@ -82,18 +82,19 @@ us.remove_nan()
 
 ### PRINCIPAL COMPONENT ANALYSIS ###
 
-pcamodel = Data_PCA(us, threshold=0.99999999999)
-pcamodel.plot_components()
-pcamodel.change_data(n_components=3)
-us.X = pcamodel.X
+#pcamodel = Data_PCA(us, threshold=0.99999999999)
+#pcamodel.plot_components()
+
+#pcamodel.change_data(n_components=3)
+#us.X = pcamodel.X
 #print(us.X)
 #us.X_cv
 
 ### SUPPORT VECTOR MACHINE ###
 
-#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-#svm.optimize()
-#svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
+svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+svm.optimize()
+svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 ### DECISION TREE ###
 
@@ -104,7 +105,7 @@ us.X = pcamodel.X
 
 #sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #sgd.optimize()
-#sgd.train(show_loss=True, show_acc=False)
+#sgd.train(show_loss=False, show_acc=True)
 
 #svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()

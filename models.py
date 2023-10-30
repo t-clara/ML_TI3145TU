@@ -194,15 +194,15 @@ class SVCClassification:
         # I will only consider it in the train() function to tabulate and compare the final results.
 
         # Parametrization Space
-        #C_list = np.logspace(-1, 2, num=4).tolist()
-        #kernel_list = ['linear', 'poly']
-        #degree_list = np.arange(1, 10)
-        #gamma_list = ['scale', 'auto']
-
-        C_list = [10.0]
+        C_list = np.logspace(-1, 2, num=4).tolist()
         kernel_list = ['linear', 'poly']
-        degree_list = np.arange(1, 2)
-        gamma_list = ['scale']
+        degree_list = np.arange(1, 10)
+        gamma_list = ['scale', 'auto']
+
+        #C_list = [10.0]
+        #kernel_list = ['linear', 'poly']
+        #degree_list = np.arange(1, 2)
+        #gamma_list = ['scale']
 
 
         # Dictionary of Parametrization Space
@@ -346,7 +346,6 @@ class SGDClassification:
         self.model = SGDClassifier(loss=self.loss, penalty=self.penalty, alpha=self.alpha, max_iter=self.max_iter, \
                                     random_state=self.random_state, learning_rate=self.learning_rate, \
                                       eta0=self.eta0, warm_start=self.warm_start)
-        self.best = None
     
     def __str__(self) -> str:
         '''Str representation of SGD'''
@@ -459,14 +458,14 @@ class SGDClassification:
         '''Train the SGD classifier with the best parameter'''
         
         print('\n===========================')
-        input_val = bool(input('Enter True to check with CV, False to check with Test\n'))
+        input_val = input('Enter True to check with CV, False to check with Test\n')
         print('===========================\n')
 
         #Disclaimers
         print(f"CAUTION: You have just called .train() for SGDClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
 
-        if input_val:
+        if input_val == 'True':
             infer_time, sgd_train_loss, sgd_other_loss = [], [], []
             sgd_train_score, sgd_other_score = [], []
             # Infer Time Start
@@ -500,19 +499,19 @@ class SGDClassification:
                     bar()
 
             infer_time_average = np.mean(infer_time)
-            print(f'INFO: Mean Accuracy (SGDClassification) = {np.mean(sgd_other_score)}')
-            print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+            print(f'INFO: Mean Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')
+            print(f'INFO: Average Inference Time (SGDClassification) = {infer_time_average}')
             if show_loss:
                 plt.plot(sgd_train_loss, label = 'Train Log Loss')
                 plt.plot(sgd_other_loss, label = 'Validation Log Loss')
-                plt.xlabel('Batch Number')
+                plt.xlabel('Epoch Number')
                 plt.ylabel('Log Losses')
                 plt.legend()
                 plt.show()
             if show_acc:
                 plt.plot(sgd_train_score, label = 'Train Error Rate')
                 plt.plot(sgd_other_score, label = 'Validation Error Rate')
-                plt.xlabel('Batch Number')
+                plt.xlabel('Epoch Number')
                 plt.ylabel('Error Rate')
                 plt.legend()
                 plt.show()
@@ -550,20 +549,20 @@ class SGDClassification:
                     bar()
 
             infer_time_average = np.mean(infer_time)
-            print(f'INFO: Mean Accuracy (SGDClassification) = {np.mean(sgd_other_score)}')
-            print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+            print(f'INFO: Mean Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')
+            print(f'INFO: Average Inference Time (SGDClassification) = {infer_time_average}')
 
             if show_loss:
                 plt.plot(sgd_train_loss, label = 'Train Log Loss')
                 plt.plot(sgd_other_loss, label = 'Test Log Loss')
-                plt.xlabel('Batch Number')
+                plt.xlabel('Epoch Number')
                 plt.ylabel('Log Losses')
                 plt.legend()
                 plt.show()
             if show_acc:
                 plt.plot(sgd_train_score, label = 'Train Error Rate')
                 plt.plot(sgd_other_score, label = 'Test Error Rate')
-                plt.xlabel('Batch Number')
+                plt.xlabel('Epoch Number')
                 plt.ylabel('Error Rate')
                 plt.legend()
                 plt.show()
