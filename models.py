@@ -325,7 +325,7 @@ class SGDClassification:
     '''SGD Classifier Common Class'''
     def __init__(self, X, y, X_train, y_train, X_test, y_test, X_cv, y_cv, loss: str = 'log_loss', 
                  penalty: str | None = 'l2', alpha: float = 0.0001, 
-                 max_iter: int = 1000, learning_rate: str = 'constant', eta0: float = 0.1, 
+                 max_iter: int = 1000, learning_rate: str = 'constant', eta0: float = 0.001, 
                  random_state: int = 42, warm_start: bool = True) -> None:
         self.X = X
         self.y = y
