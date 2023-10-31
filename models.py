@@ -314,12 +314,10 @@ class SVCClassification:
 
         self.training_time = training_time_average
         self.inference_time = infer_time_average
-        self.accuracy_test = test_accuracy
-        self.error_rate_test = 1-test_accuracy
 
         SVC_table = BeautifulTable()
-        SVC_table.columns.header = ["", "Average Training Time","Average Inference Time","Test Accuracy"]
-        SVC_table.rows.append(['Optimal SVC', training_time_average, infer_time_average, test_accuracy])
+        SVC_table.columns.header = ["", "Average Training Time","Average Inference Time","Training Accuracy", "Validation Accuracy"]
+        SVC_table.rows.append(['Optimal SVC', training_time_average, infer_time_average, train_accuracy, cv_accuracy])
         print(SVC_table)
         
 class SGDClassification:
@@ -347,8 +345,6 @@ class SGDClassification:
         self.model = SGDClassifier(loss=self.loss, penalty=self.penalty, alpha=self.alpha, max_iter=self.max_iter, \
                                     random_state=self.random_state, learning_rate=self.learning_rate, \
                                       eta0=self.eta0, warm_start=self.warm_start)
-<<<<<<< Updated upstream
-=======
         self.cv_accuracy: list[float] = []
         self.optimal_models = []
         # Common Attributes used for Comparison:
@@ -356,7 +352,6 @@ class SGDClassification:
         self.accuracy_val = None
         self.training_time = None
         self.inference_time = None
->>>>>>> Stashed changes
     
     def __str__(self) -> str:
         '''Str representation of SGD'''
@@ -365,7 +360,7 @@ class SGDClassification:
     def optimize(self, further_optimize: bool = False):
         '''Optimizes the SGD model'''
         if further_optimize:
-            #TODO RETRIEVE ALL OF THE PARAMS AND SEARCH DEEPER
+            # RETRIEVE ALL OF THE PARAMS AND SEARCH DEEPER
             retrieve_params = self.model.get_params()
             #Tuning parameters
             alpha_list = np.logspace(-4, 4, num=9).tolist() + [0]
@@ -480,23 +475,38 @@ class SGDClassification:
             infer_time, sgd_train_loss, sgd_other_loss = [], [], []
             sgd_train_score, sgd_other_score = [], []
             # Infer Time Start
+            train_time = []
+            infer_time = []
             with alive_bar(len(range(n_batches))) as bar:
                 for _ in range(n_batches):
-                    infer_time_start = time.perf_counter()
+                    # Train Time Start
+                    train_time_start = time.perf_counter()
 
                     # Model Construction
                     self.model.partial_fit(self.X_train, self.y_train, classes = np.unique(self.y_train))
                     
+                    # Train Time Stop
+                    train_time_stop = time.perf_counter()
+                    train_time.append(train_time_stop - train_time_start)
+                    
+                    # Infer Time Start
+                    infer_time_start = time.perf_counter()
+                    # Predictions:
+                    train_predictions = self.model.predict(self.X_train)
+                    train_predictions_proba = self.model.predict_proba(self.X_train)
+                    cv_predictions = self.model.predict(self.X_cv)
+                    cv_predictions_proba = self.model.predict_proba(self.X_cv)
                     # Infer Time Stop
                     infer_time_stop = time.perf_counter()
                     infer_time.append(infer_time_stop - infer_time_start)
-                    
-                    # Training Data:
-                    train_predictions = self.model.predict(self.X_train)
-                    train_predictions_proba = self.model.predict_proba(self.X_train)
+
+                    ### DID NOT IMPLEMENT LOSS & SCORE FOR CV ###
 
                     sgd_train_loss.append(log_loss(self.y_train, train_predictions_proba))
                     sgd_train_score.append(1 - accuracy_score(self.y_train, train_predictions))
+                    
+                    train_accuracy = accuracy_score(self.y_train, train_predictions)
+                    cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
 
                     # Other Data
                     other_predictions = self.model.predict(self.X_cv)
@@ -510,8 +520,17 @@ class SGDClassification:
                     bar()
 
             infer_time_average = np.mean(infer_time)
-            print(f'INFO: Mean Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')
+            train_time_average = np.mean(train_time)
+            self.inference_time = infer_time_average
+            self.training_time = train_time_average
+            self.accuracy_train = train_accuracy
+            self.accuracy_val = cv_accuracy
+
+            print(f'INFO: Average Training Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')
+            print(f'INFO: Average Validation Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')
+            print(f'INFO: Average Training Time (SGDClassification) = {train_time_average}')
             print(f'INFO: Average Inference Time (SGDClassification) = {infer_time_average}')
+
             if show_loss:
                 plt.plot(sgd_train_loss, label = 'Train Log Loss')
                 plt.plot(sgd_other_loss, label = 'Validation Log Loss')
