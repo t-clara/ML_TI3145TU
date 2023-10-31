@@ -87,7 +87,7 @@ class DecisionTreeClassification:
         print(f"INFO: Training Accuracy={train_accuracy[max_depth_optimal - 1][0]}")
 
         self.accuracy_train = train_accuracy[max_depth_optimal - 1][0]
-        self.accuracy_val = cv_accuracy[max_depth_optimal - 1][0
+        self.accuracy_val = cv_accuracy[max_depth_optimal - 1][0]
        
         
     def train(self, X_train, y_train, labels):
@@ -99,17 +99,18 @@ class DecisionTreeClassification:
         # Train Time Stop
         train_time_stop = time.perf_counter()
         train_time.append(train_time_stop - train_time_start)
+        '''
         plt.figure(figsize=(20,20),dpi=80)
         tree.plot_tree(self.model, filled=True, feature_names=labels)
         plt.show()
-
+        '''
         self.training_time = train_time[0]
         # No Predictions
         self.inference_time = None
 
 
 class KNeighborsClassification:
-    def __init__(self, X, y, X_train, y_train, X_test, y_test, n_neighbors: int = 5, weights: str = 'uniform') -> None:
+    def __init__(self, X, y, X_train, y_train, X_test, y_test, X_cv, y_cv, n_neighbors: int = 5, weights: str = 'uniform') -> None:
         self.n_neighbors = n_neighbors
         self.weights = weights
         self.model = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights)
@@ -119,6 +120,8 @@ class KNeighborsClassification:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
+        self.X_cv = X_cv
+        self.y_cv = y_cv
         # Common Attributes used for Comparison:
         self.accuracy_train = None
         self.accuracy_val = None
@@ -128,7 +131,6 @@ class KNeighborsClassification:
     def __str__(self) -> str:
         return f"KNeighborsClassifier(n_neighbors={self.n_neighbors}, weights={self.weights})"
 
-#MISSING THE MODEL UPDATE
     def optimize(self, max_n_neighbors: int, n_folds: int = 5) -> None:
         ###########################################
         ### GRID SEARCH IMPLEMENTATION REQUIRED ###
@@ -304,7 +306,7 @@ class SVCClassification:
         print(f'INFO: Training Accuracy (SVCClassification) = {train_accuracy}')
         print(f'INFO: Validation Accuracy (SVCClassification) = {cv_accuracy}')
         
-        training_time_average = np.mean(training_time)
+        training_time_average = np.mean(train_time)
         infer_time_average = np.mean(infer_time)
 
         self.training_time = training_time_average

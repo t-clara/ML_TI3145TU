@@ -34,6 +34,7 @@ from beautifultable import BeautifulTable
 ########################################
 
 import mnist, ninefour
+import pandas as pd
 from models import KNeighborsClassification, Data_PCA, DecisionTreeClassification, SVCClassification, SGDClassification
 
 ########################################
@@ -60,17 +61,18 @@ KNN_MNIST_8x8.CV_tune_K
 #            US CENSUS DATA            #
 #                                      #
 ########################################
-
-us = ninefour.USdata()
+X = pd.read_csv('data\census_train.csv', sep=',', header=0)
+y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
+us = ninefour.USdata(X=X, y=y)
 us.data_information(False)
-#col = us.get_columns()
 #print(col)
-#us.dummy(True)
+us.dummy(True)
 #us.display()
 #us.unique()
-us.split(test_size=0.4, cv_size=0.2)
-us.preprocess(with_mean=False)
+us.split(test_size=0.15, cv_size=0.15)
+us.preprocess(with_mean=True)
 us.remove_nan()
+col = us.get_columns()
 #us.unique()
 us.tonumpy()
 
@@ -89,12 +91,9 @@ mn.preprocessing()
 
 
 ### K NEIGHBORS ###
-
-#KNN_US = KNeighborsClassification(X=us.X, y=us.y, 
-                                         #X_train=us.X_train, y_train=us.y_train, 
-                                         #X_test=us.X_test, y_test=us.y_test)
-#KNN_US.CV_tune_K(max_n_neighbors=20)
-#KNN_US.train()
+knn = KNeighborsClassification(X=us.X, y=us.y, X_train=us.X_train, y_train=us.y_train, X_test=us.X_test, y_test=us.y_test, X_cv=us.X_cv, y_cv=us.y_cv)
+#knn.CV_tune_K(max_n_neighbors=20)
+knn.train()
 
 ### PRINCIPAL COMPONENT ANALYSIS ###
 
@@ -108,24 +107,24 @@ mn.preprocessing()
 
 ### SUPPORT VECTOR MACHINE ###
 
-#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svm.optimize()
-#svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
+svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 ### DECISION TREE ###
 
-#dt = DecisionTreeClassification()
+dt = DecisionTreeClassification(us.X_train, us.y_train, us.X_cv, us.y_cv)
 #dt.optimize(us.X_train, us.y_train, us.X_test, us.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
-#dt.train(us.X_train, us.y_train, col)
+dt.train(us.X_train, us.y_train, labels=col)
 
 sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #sgd.optimize()
 sgd.train(show_loss=False, show_acc=True)
 
-#svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()
-#svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
+svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 class Compare:
     def __init__(self, dummy_model, KNN_model, SVC_model, DT_model, SGD_model) -> None:
@@ -162,7 +161,7 @@ class Compare:
         for attribute, measurement in model_accuracies.items():
             offset = width * multiplier
             rects = ax.bar(x + offset, measurement, width, label=attribute)
-            ax.bar_label(rects, padding=3)
+            ax.bar_label(rects, padding=2)
             multiplier += 1
         
         # Add some text for labels, title and custom x-axis tick labels, etc.
@@ -171,3 +170,7 @@ class Compare:
         ax.set_xticks(x + width, model_types)
         ax.legend(loc='upper left', ncols=3)
         ax.set_ylim(0, 250)
+        plt.show()
+
+compare = Compare(knn, svc, dt, sgd)
+compare.bar_chart_accuracies()
