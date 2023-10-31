@@ -25,6 +25,7 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import log_loss, accuracy_score
 import numpy as np
 import matplotlib.pyplot as plt
+from beautifultable import BeautifulTable
 
 ########################################
 #                                      #
@@ -33,6 +34,7 @@ import matplotlib.pyplot as plt
 ########################################
 
 import mnist, ninefour
+import pandas as pd
 from models import KNeighborsClassification, Data_PCA, DecisionTreeClassification, SVCClassification, SGDClassification
 
 ########################################
@@ -59,12 +61,12 @@ KNN_MNIST_8x8.CV_tune_K
 #            US CENSUS DATA            #
 #                                      #
 ########################################
-
-us = ninefour.USdata()
+X = pd.read_csv('data\census_train.csv', sep=',', header=0)
+y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
+us = ninefour.USdata(X=X, y=y)
 us.data_information(False)
-#col = us.get_columns()
 #print(col)
-#us.dummy(True)
+us.dummy(True)
 #us.display()
 #us.unique()
 us.split(test_size=0.15, cv_size=0.15)
@@ -85,6 +87,7 @@ us.y_cv = pcamodel.y_cv
 '''
 us.preprocess(with_mean=True)
 us.remove_nan()
+col = us.get_columns()
 #us.unique()
 us.tonumpy()
 
@@ -112,7 +115,8 @@ knn.train()
 ### SUPPORT VECTOR MACHINE ###
 
 
-#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+
+svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svm.optimize()
 #svm.train()
 #svm.optimize(further_optimize=True)
@@ -120,10 +124,10 @@ knn.train()
 
 ### DECISION TREE ###
 
-#dt = DecisionTreeClassification()
+dt = DecisionTreeClassification(us.X_train, us.y_train, us.X_cv, us.y_cv)
 #dt.optimize(us.X_train, us.y_train, us.X_test, us.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
-#dt.train(us.X_train, us.y_train, col)
+dt.train(us.X_train, us.y_train, labels=col)
 
 #sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #sgd.optimize()
@@ -132,9 +136,9 @@ knn.train()
 #sgd.train(show_loss=False, show_acc=True)
 #sgd.display()
 
-#svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()
-#svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
+svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 class Compare:
     def __init__(self, dummy_model, DT_model, KNN_model, SVC_model, SGD_model) -> None:
@@ -152,8 +156,12 @@ class Compare:
         comparison_table.rows.append(['SGD', self.SGD_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])    
         comparison_table.rows.append(['KNN', self.KNN_model.accuracy_train, self.KNN_model.training_time, self.KNN_model.inference_time])
         comparison_table.rows.append(['SVC', self.SVC_model.accuracy_train, self.SVC_model.training_time, self.SVC_model.inference_time])
+        comparison_table.rows.append(['Dummy (Baseline)', self.dummy_model.accuracy_train, self.dummy_model.training_time, self.dummy_model.inference_time])
+        comparison_table.rows.append(['DT', self.DT_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])
+        comparison_table.rows.append(['SGD', self.SGD_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])    
+        comparison_table.rows.append(['KNN', self.KNN_model.accuracy_train, self.KNN_model.training_time, self.KNN_model.inference_time])
+        comparison_table.rows.append(['SVC', self.SVC_model.accuracy_train, self.SVC_model.training_time, self.SVC_model.inference_time])
         print(comparison_table)
-
 
     def bar_chart_accuracies(self):
         model_types = ("DT", "SGD", "KNN", "SVC")
@@ -172,14 +180,16 @@ class Compare:
         for attribute, measurement in model_accuracies.items():
             offset = width * multiplier
             rects = ax.bar(x + offset, measurement, width, label=attribute)
-            ax.bar_label(rects, padding=3)
+            ax.bar_label(rects, padding=2)
             multiplier += 1
-
+        
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.set_ylabel('Accuracies')
         ax.set_title('Model Accuracies')
         ax.set_xticks(x + width, model_types)
         ax.legend(loc='upper left', ncols=3)
         ax.set_ylim(0, 250)
-
         plt.show()
+
+compare = Compare(knn, svc, dt, sgd)
+compare.bar_chart_accuracies()

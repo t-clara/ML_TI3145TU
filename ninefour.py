@@ -32,8 +32,8 @@ census_labels = np.genfromtxt("data/census_labels.csv", delimiter=',', skip_head
 census_unknown = np.genfromtxt("data/census_unknown.csv", delimiter=',', skip_header=1)
 
 '''
-X = pd.read_csv('data\census_train.csv', sep=',', header=0)
-y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
+#X = pd.read_csv('data\census_train.csv', sep=',', header=0)
+#y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
 #X = pd.read_csv(r"C:\Users\thiba\Downloads\Running\data\census_train.csv", sep=',', header=0)
 #y = pd.read_csv(r"C:\Users\thiba\Downloads\Running\data\census_labels.csv", sep=',', header=0)
 
@@ -45,13 +45,18 @@ y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
 
 class USdata:
     '''Class to operate on the 1994 data'''
-    def __init__(self, X=X, y=y, random_state: int = 42) -> None:
+    def __init__(self, X, y, random_state: int = 42) -> None:
         '''Initializer to read the data'''
         self.random_state = random_state
         self.X = X
         self.y = y
         self.X_np = np.array(self.X)
         self.y_np = np.array(self.y)
+        # Common Attributes used for Comparison (pasted here because of DummyClassifier):
+        self.accuracy_train = None
+        self.accuracy_val = None
+        self.training_time = None
+        self.inference_time = None
         
     def display(self) -> None:
         '''Displays the whole dataset'''
@@ -207,6 +212,7 @@ class USdata:
                 print(copy[i])
         else:
             print(np.mean(copy))
+        self.dummy = dummy_classifier
 
     def split(self, test_size: float, cv_size: float | None = None):
         '''Create a training/test split. Alternatively, you can have a validation set'''
