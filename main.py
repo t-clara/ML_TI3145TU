@@ -136,21 +136,13 @@ class Compare:
     def tabulate(self):
         comparison_table = BeautifulTable()
         comparison_table.columns.header = ["Algorithm", "Test Accuracy", "Average Training Time", "Average Inference Time"]
-        comparison_table.rows.append(
-            ['Dummy (Baseline)', self.dummy_model.accuracy_test, self.dummy_model.training_time, self.dummy_model.inference_time],
-            ['KNN', self.KNN_model.accuracy_test, self.KNN_model.training_time, self.KNN_model.inference_time],
-            ['SVC', self.SVC_model.accuracy_test, self.SVC_model.training_time, self.SVC_model.inference_time],
-            ['DT', self.DT_model.accuracy_test, self.DT_model.training_time, self.DT_model.inference_time],
-            ['SGD', self.SGD_model.accuracy_test, self.DT_model.training_time, self.DT_model.inference_time]                                     
-                                     )
+        comparison_table.rows.append(['Dummy (Baseline)', self.dummy_model.accuracy_train, self.dummy_model.training_time, self.dummy_model.inference_time])
+        comparison_table.rows.append(['DT', self.DT_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])
+        comparison_table.rows.append(['SGD', self.SGD_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])    
+        comparison_table.rows.append(['KNN', self.KNN_model.accuracy_train, self.KNN_model.training_time, self.KNN_model.inference_time])
+        comparison_table.rows.append(['SVC', self.SVC_model.accuracy_train, self.SVC_model.training_time, self.SVC_model.inference_time])
         print(comparison_table)
 
-
-<<<<<<< Updated upstream
-    def bar_charts(self):
-        # Plot all column space comparatively. 
-        pass
-=======
     def bar_chart_accuracies(self):
         model_types = ("DT", "SGD", "KNN", "SVC")
         ### REQUIRES IMPLEMENTATION OF MODEL ATTRIBUTES IN models.py ###
@@ -177,6 +169,3 @@ class Compare:
         ax.set_xticks(x + width, model_types)
         ax.legend(loc='upper left', ncols=3)
         ax.set_ylim(0, 250)
->>>>>>> Stashed changes
-
-#compare = Compare(KNN_model=, SVC_model=, DT_model=, SGD_model=)
