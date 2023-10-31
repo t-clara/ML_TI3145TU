@@ -146,8 +146,37 @@ class Compare:
         print(comparison_table)
 
 
+<<<<<<< Updated upstream
     def bar_charts(self):
         # Plot all column space comparatively. 
         pass
+=======
+    def bar_chart_accuracies(self):
+        model_types = ("DT", "SGD", "KNN", "SVC")
+        ### REQUIRES IMPLEMENTATION OF MODEL ATTRIBUTES IN models.py ###
+        model_accuracies = {
+            'Training Accuracy': (self.DT_model.accuracy_train, self.SGD_model.accuracy_train, self.KNN_model.accuracy_train, self.SVC_model.accuracy_train),
+            'Validation Accuracy': (self.DT_model.accuracy_val, self.SGD_model.accuracy_val, self.KNN_model.accuracy_val, self.SVC_model.accuracy_val)
+        }
+
+        x = np.arange(len(model_types))  # the label locations
+        width = 0.25  # the width of the bars
+        multiplier = 0
+
+        fig, ax = plt.subplots(layout='constrained')
+
+        for attribute, measurement in model_accuracies.items():
+            offset = width * multiplier
+            rects = ax.bar(x + offset, measurement, width, label=attribute)
+            ax.bar_label(rects, padding=3)
+            multiplier += 1
+        
+        # Add some text for labels, title and custom x-axis tick labels, etc.
+        ax.set_ylabel('Accuracies')
+        ax.set_title('Model Accuracies')
+        ax.set_xticks(x + width, model_types)
+        ax.legend(loc='upper left', ncols=3)
+        ax.set_ylim(0, 250)
+>>>>>>> Stashed changes
 
 #compare = Compare(KNN_model=, SVC_model=, DT_model=, SGD_model=)

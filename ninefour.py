@@ -52,6 +52,11 @@ class USdata:
         self.y = y
         self.X_np = np.array(self.X)
         self.y_np = np.array(self.y)
+        # Common Attributes used for Comparison (pasted here because of DummyClassifier):
+        self.accuracy_train = None
+        self.accuracy_val = None
+        self.training_time = None
+        self.inference_time = None
         
     def display(self) -> None:
         '''Displays the whole dataset'''

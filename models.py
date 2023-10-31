@@ -40,18 +40,27 @@ from beautifultable import BeautifulTable
 ########################################
 
 class DecisionTreeClassification:
-    def __init__(self, max_depth: int = None, min_samples_leaf: int = 2, random_state: int = 42) -> None:
+    def __init__(self, X_train, y_train, X_cv, y_cv, max_depth: int = None, min_samples_leaf: int = 2, random_state: int = 42) -> None:
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_cv = X_cv
+        self.y_cv = y_cv
         self.max_depth = max_depth
         self.min_samples_leaf = min_samples_leaf
         self.random_state = random_state
         self.model = DecisionTreeClassifier(max_depth=self.max_depth, min_samples_leaf=self.min_samples_leaf, random_state=self.random_state)
+        # Common Attributes used for Comparison:
+        self.accuracy_train = None
+        self.accuracy_val = None
+        self.training_time = None
+        self.inference_time = None
 
     def __str__(self):
         return f"DecisionTreeClassifier(max_depth={self.max_depth}, min_samples_leaf={self.min_samples_leaf}, random_state={self.random_state})"
     
-    def optimize(self, X_train, y_train, X_test, y_test, max_max_depth: int, max_min_samples_leaf: int) -> None:        
+    def optimize(self, max_max_depth: int, max_min_samples_leaf: int) -> None:        
         train_accuracy = []
-        test_accuracy = []
+        cv_accuracy = []
         counter1 = len(range(1, max_max_depth))
         counter2 = len(range(1, max_min_samples_leaf))
         total = counter1 * counter2
@@ -59,29 +68,44 @@ class DecisionTreeClassification:
             for max_depth in range(1, max_max_depth):
                 for min_samples_leaf in range(1, max_min_samples_leaf):
                     local_model = DecisionTreeClassifier(max_depth=max_depth, min_samples_leaf=min_samples_leaf, random_state=self.random_state)
-                    local_model.fit(X_train, y_train)
-                    predictions_train = local_model.predict(X_train)
-                    predictions_test = local_model.predict(X_test)
-                    train_accuracy.append((accuracy_score(predictions_train, y_train), (max_depth, min_samples_leaf)))
-                    test_accuracy.append((accuracy_score(predictions_test, y_test), (max_depth, min_samples_leaf)))
+                    local_model.fit(self.X_train, self.y_train)
+                    predictions_train = local_model.predict(self.X_train)
+                    predictions_cv = local_model.predict(self.X_cv)
+                    train_accuracy.append((accuracy_score(predictions_train, self.y_train), (max_depth, min_samples_leaf)))
+                    cv_accuracy.append((accuracy_score(predictions_cv, self.y_cv), (max_depth, min_samples_leaf)))
                     time.sleep(.005)
                     bar()
                 
         print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
 
-        max_depth_optimal = test_accuracy.index(max(test_accuracy)) + 1
-        self.max_depth, self.min_samples_leaf = test_accuracy[max_depth_optimal - 1][1]
-
+        max_depth_optimal = cv_accuracy.index(max(cv_accuracy)) + 1
+        self.max_depth, self.min_samples_leaf = cv_accuracy[max_depth_optimal - 1][1]
         self.model = DecisionTreeClassifier(max_depth=self.max_depth, min_samples_leaf=self.min_samples_leaf, random_state=self.random_state)
+        
         print(str(self))
-        print(f"INFO: Test Accuracy={test_accuracy[max_depth_optimal - 1][0]}")
+        print(f"INFO: Validation Accuracy={cv_accuracy[max_depth_optimal - 1][0]}")
         print(f"INFO: Training Accuracy={train_accuracy[max_depth_optimal - 1][0]}")
+
+        self.accuracy_train = train_accuracy[max_depth_optimal - 1][0]
+        self.accuracy_val = cv_accuracy[max_depth_optimal - 1][0
+       
         
     def train(self, X_train, y_train, labels):
+        train_time = []
+        # Train Time Start
+        train_time_start = time.perf_counter()
+        # Model Construction
         self.model.fit(X_train, y_train)
+        # Train Time Stop
+        train_time_stop = time.perf_counter()
+        train_time.append(train_time_stop - train_time_start)
         plt.figure(figsize=(20,20),dpi=80)
         tree.plot_tree(self.model, filled=True, feature_names=labels)
         plt.show()
+
+        self.training_time = train_time[0]
+        # No Predictions
+        self.inference_time = None
 
 
 class KNeighborsClassification:
@@ -95,33 +119,28 @@ class KNeighborsClassification:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
+        # Common Attributes used for Comparison:
+        self.accuracy_train = None
+        self.accuracy_val = None
+        self.training_time = None
+        self.inference_time = None
     
     def __str__(self) -> str:
         return f"KNeighborsClassifier(n_neighbors={self.n_neighbors}, weights={self.weights})"
 
 #MISSING THE MODEL UPDATE
     def optimize(self, max_n_neighbors: int, n_folds: int = 5) -> None:
-
-        validation_accuracy = []
-        infer_time = []
-        n_folds = 5
-
+        ###########################################
+        ### GRID SEARCH IMPLEMENTATION REQUIRED ###
+        ###########################################
+        cv_accuracy = []
         for n_neighbors in range(1, max_n_neighbors+1):
-            # Infer Time Start
-            infer_time_start = time.perf_counter()
-
             # Local Model Construction
             local_model = KNeighborsClassifier(n_neighbors=n_neighbors, weights=self.weights)
-
-            # Infer Time Stop
-            infer_time_stop = time.perf_counter()
-            infer_time.append(infer_time_stop - infer_time_start)
-
             # Accuracy Assessment 
             cross_validation_accuracy = cross_val_score(local_model, self.X, self.y, cv=n_folds)
-            validation_accuracy.append(np.mean(cross_validation_accuracy))
-
-            K_optimal = validation_accuracy.index(max(validation_accuracy)) + 1
+            cv_accuracy.append(np.mean(cross_validation_accuracy))
+            K_optimal = cv_accuracy.index(max(cv_accuracy)) + 1
             self.n_neighbors = K_optimal
             self.model = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights)
         
@@ -149,20 +168,39 @@ class KNeighborsClassification:
     def train(self):
         print(f"CAUTION: You have just called .train() for KNeighborsClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
+        train_time = []
+        # Train Time Start
+        train_time_start = time.perf_counter()
+        # Model Construction
+        self.model.fit(self.X_train, self.y_train)
+        # Train Time Stop
+        train_time_stop = time.perf_counter()
+        train_time.append(train_time_stop - train_time_start)
+
         infer_time = []
         # Infer Time Start
         infer_time_start = time.perf_counter()
-        # Model Construction
-        self.model.fit(self.X_train, self.y_train)
+        # Predictions:
+        train_predictions = self.model.predict(self.X_train)
+        cv_predictions = self.model.predict(self.X_cv)
         # Infer Time Stop
         infer_time_stop = time.perf_counter()
         infer_time.append(infer_time_stop - infer_time_start)
-        # Testing Data:
-        test_predictions = self.model.predict(self.X_test)
-        test_accuracy = accuracy_score(self.y_test, test_predictions)
-        print(f'INFO: Accuracy (KNeighborsClassification) = {test_accuracy}')
+
+        train_accuracy = accuracy_score(self.y_train, train_predictions)
+        cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
+
+        self.accuracy_train = train_accuracy
+        self.accuracy_val = cv_accuracy
+
+        print(f'INFO: Training Accuracy (KNeighborsClassification) = {train_accuracy}')
+        print(f'INFO: Validation Accuracy (KNeighborsClassification) = {cv_accuracy}')
         infer_time_average = np.mean(infer_time)
         print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+
+        self.training_time = train_time[0]
+        self.inference_time = infer_time_average
+
 
 class SVCClassification:
     def __init__(self, X, y, X_train, y_train, X_test, y_test, X_cv, y_cv, C: int = 10, kernel: str = 'poly', degree: int = 3, gamma: str = 'scale', random_state: int = 42) -> None:
@@ -180,11 +218,11 @@ class SVCClassification:
         self.gamma = gamma
         self.random_state = random_state
         self.model = SVC(C=self.C, kernel=self.kernel, degree=self.degree, gamma=self.gamma, random_state=self.random_state)
-        # Key Model Attributes for Comparison Charts:
+        # Common Attributes used for Comparison:
+        self.accuracy_train = None
+        self.accuracy_val = None
         self.training_time = None
         self.inference_time = None
-        self.accuracy_test = None
-        self.error_rate_test = None
     
     def __str__(self) -> str:
         return f"SVC(C={self.C}, kernel={self.kernel}, degree={self.degree}, gamma={self.gamma}, random_state={self.random_state})"
@@ -232,82 +270,45 @@ class SVCClassification:
         self.model = best_model
         print(f"INFO: {str(self)}")
         print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
-
-        '''
-        with alive_bar(total) as bar:
-            for element in combinations:
-                C, kernel, degree, gamma = element
-                local_model = SVC(C=C, kernel=kernel, degree=degree, gamma=gamma)
-                local_model.fit(self.X_train, self.y_train)
-
-                ### LIGHT EDITION ###
-                predictions = local_model.predict(self.X_cv)
-                validation_accuracy = accuracy_score(predictions, self.y_cv)
-                dict_of_models[element] = validation_accuracy
-
-                ### CHUNKY EDITION ### 
-                #cross_validation_accuracy = cross_val_score(local_model, self.X, self.y, cv=n_folds)
-                #dict_of_models[element] = np.mean(cross_validation_accuracy)
-
-                # Progress Bar
-                time.sleep(.005)
-                bar()
-        max_accuracy = max(dict_of_models.values())
-        best_combination = [key for key, value in dict_of_models.items() if value == max_accuracy]
-        if len(best_combination) > 1:
-            print(f"STATUS: {len(best_combination)} OPTIMAL MODELS IDENTIFIED! \n")
-            for i, single_best_combination in enumerate(best_combination):
-                C, kernel, degree, gamma = single_best_combination
-                local_model = SVC(C=C, kernel=kernel, degree=degree, gamma=gamma, random_state=self.random_state)
-                local_accuracy = dict_of_models[single_best_combination]
-                print(f"INFO, Model {i+1}: SVC(C={C}, kernel={kernel}, degree={degree}, gamma={gamma}, random_state={self.random_state})")
-                print(f"INFO: Validation Accuracy={local_accuracy} \n")
-            try:
-                chosen_index = int(input(f"Input the model number you would like to preserve: "))
-                print()
-                self.C, self.kernel, self.degree, self.gamma = best_combination[chosen_index-1]
-                self.model = SVC(C=self.C, kernel=self.kernel, degree=self.degree, gamma=self.gamma, random_state=self.random_state)
-            except ValueError:
-                raise ValueError
-        else:
-            self.C, self.kernel, self.degree, self.gamma = best_combination[0]
-            self.model = SVC(C=self.C, kernel=self.kernel, degree=self.degree, gamma=self.gamma, random_state=self.random_state)
-            print("STATUS: OPTIMAL MODEL IDENTIFIED!")
-            print(str())
-            print(f"INFO: Validation Accuracy={max_accuracy}") 
-
-        '''
         
-    
     def train(self, X_train, y_train, X_test, y_test) -> None:
         print(f"CAUTION: You have just called .train() for SVCClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
 
-        training_time = []
-        # Training Time Start
-        training_time_start = time.perf_counter()
+        train_time = []
+        # Train Time Start
+        train_time_start = time.perf_counter()
         # Model Construction
         self.model.fit(X_train, y_train)
-        # Training Time Stop
-        training_time_stop = time.perf_counter()
-        training_time.append(training_time_stop - training_time_start)
-        
+        # Train Time Stop
+        train_time_stop = time.perf_counter()
+        train_time.append(train_time_stop - train_time_start)
+                
         infer_time = []
         # Infer Time Start
         infer_time_start = time.perf_counter()
-        # Prediction
-        test_predictions = self.model.predict(self.X_test)
+        # Predictions:
+        train_predictions = self.model.predict(self.X_train)
+        cv_predictions = self.model.predict(self.X_cv)
         # Infer Time Stop
         infer_time_stop = time.perf_counter()
         infer_time.append(infer_time_stop - infer_time_start)
 
-        print(f"STATUS: *** CHECKING ACCURACY ON TEST SET ***")
-        test_accuracy = accuracy_score(self.y_test, test_predictions)
+        train_accuracy = accuracy_score(self.y_train, train_predictions)
+        cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
+
+        self.accuracy_train = train_accuracy
+        self.accuracy_val = cv_accuracy
          
         # Report Performance
-        print(f'INFO: Accuracy (SVCClassification) = {test_accuracy}')
+        print(f'INFO: Training Accuracy (SVCClassification) = {train_accuracy}')
+        print(f'INFO: Validation Accuracy (SVCClassification) = {cv_accuracy}')
+        
         training_time_average = np.mean(training_time)
         infer_time_average = np.mean(infer_time)
+
+        self.training_time = training_time_average
+        self.inference_time = infer_time_average
         print(f"INFO: Average Training Time (SVCClassification) = {training_time_average}")
         print(f'INFO: Average Inference Time (SVCClassification) = {infer_time_average}')
 
@@ -346,6 +347,16 @@ class SGDClassification:
         self.model = SGDClassifier(loss=self.loss, penalty=self.penalty, alpha=self.alpha, max_iter=self.max_iter, \
                                     random_state=self.random_state, learning_rate=self.learning_rate, \
                                       eta0=self.eta0, warm_start=self.warm_start)
+<<<<<<< Updated upstream
+=======
+        self.cv_accuracy: list[float] = []
+        self.optimal_models = []
+        # Common Attributes used for Comparison:
+        self.accuracy_train = None
+        self.accuracy_val = None
+        self.training_time = None
+        self.inference_time = None
+>>>>>>> Stashed changes
     
     def __str__(self) -> str:
         '''Str representation of SGD'''

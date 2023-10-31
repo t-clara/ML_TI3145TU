@@ -45,6 +45,11 @@ class MNIST:
         self.X = X
         self.y = y
         self.random_state = random_state
+        # Common Attributes used for Comparison (pasted here because of DummyClassifier):
+        self.accuracy_train = None
+        self.accuracy_val = None
+        self.training_time = None
+        self.inference_time = None
     
     def split(self, test_size: float, cv_size: float | None = None) -> None:
         '''Create a training/test split. Alternatively, you can have a validation set'''
