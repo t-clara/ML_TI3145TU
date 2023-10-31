@@ -87,7 +87,7 @@ class DecisionTreeClassification:
 
 
 class KNeighborsClassification:
-    def __init__(self, X, y, X_train, y_train, X_test, y_test, n_neighbors: int = 5, weights: str = 'uniform') -> None:
+    def __init__(self, X, y, X_train, y_train, X_test, y_test, X_cv, y_cv, n_neighbors: int = 5, weights: str = 'uniform') -> None:
         self.n_neighbors = n_neighbors
         self.weights = weights
         self.model = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights)
@@ -97,16 +97,58 @@ class KNeighborsClassification:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
+        self.X_cv = X_cv
+        self.y_cv = y_cv
     
     def __str__(self) -> str:
         return f"KNeighborsClassifier(n_neighbors={self.n_neighbors}, weights={self.weights})"
 
     def optimize(self, max_n_neighbors: int, n_folds: int = 5) -> None:
 
-        validation_accuracy = []
+        #validation_accuracy = []
         infer_time = []
-        n_folds = 5
+        n_folds = n_folds
 
+        #Parameter space
+        n_neighbors_list = range(1, max_n_neighbors+1)
+        weights_list = ['uniform', 'distance', None]
+
+
+        parameters = {
+                'n_neighbors': n_neighbors_list,
+                'weights': weights_list,
+            }
+        # Grid Search Construction
+        local_model = KNeighborsClassifier()
+        gs = GridSearchCV(local_model, parameters, cv=n_folds, verbose=10, n_jobs=-1)
+        infer_time = []
+        #Setting up the optimization with GridSearch
+        infer_time_start = time.perf_counter()
+        gs.fit(self.X_train, self.y_train)
+        infer_time_stop = time.perf_counter()
+        infer_time.append(infer_time_stop - infer_time_start)
+        
+        # Optimization Info
+        self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
+
+        # Identifying Optimal Model
+        best_model = gs.best_estimator_
+        best_score = gs.best_score_
+        best_param = gs.best_params_
+        self.n_neighbors, self.weights = best_param['n_neighbors'], best_param['weights']
+
+        #Printing the result
+        print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
+        print(f'INFO: Setting the best model as a class attribute')
+        self.model = best_model
+        print(f"INFO: {str(self)}")
+        print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
+        print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
+            {np.mean(self.optimize_info['mean_fit_time'])} and the\
+            mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
+        print('===========================\n')
+        
+        '''
         for n_neighbors in range(1, max_n_neighbors+1):
             # Infer Time Start
             infer_time_start = time.perf_counter()
@@ -126,14 +168,10 @@ class KNeighborsClassification:
             self.n_neighbors = K_optimal
             self.model = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights)
         
-        # Plotting:
-
-        print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
-        print(f"INFO: {str(self)}")
-
+        #Plotting
         plt.title(f"Validation Accuracy for Various K for weights={self.weights}")
         plt.plot(np.arange(1, max_n_neighbors+1), validation_accuracy, label=f"Average Cross-Validation Set with n_folds={n_folds}")
-        plt.plot(K_optimal, validation_accuracy[K_optimal - 1], marker="X")
+        plt.plot(self.n_neighbors, validation_accuracy[self.n_neighbors - 1], marker="X")
         plt.xlabel("K")
         plt.ylabel(f"Average Cross-Validation Set Accuracy with n_folds={n_folds}")
         plt.legend()
@@ -146,24 +184,46 @@ class KNeighborsClassification:
         plt.xlabel('K')
         plt.ylabel('Inference Time [s]')
         plt.show()
+        '''
 
     def train(self):
         print(f"CAUTION: You have just called .train() for KNeighborsClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
-        infer_time = []
-        # Infer Time Start
-        infer_time_start = time.perf_counter()
-        # Model Construction
-        self.model.fit(self.X_train, self.y_train)
-        # Infer Time Stop
-        infer_time_stop = time.perf_counter()
-        infer_time.append(infer_time_stop - infer_time_start)
-        # Testing Data:
-        test_predictions = self.model.predict(self.X_test)
-        test_accuracy = accuracy_score(self.y_test, test_predictions)
-        print(f'INFO: Accuracy (KNeighborsClassification) = {test_accuracy}')
-        infer_time_average = np.mean(infer_time)
-        print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+
+        print('\n===========================')
+        input_val = input('Enter True to check with CV, False to check with Test\n')
+        print('===========================\n')
+
+        if input_val:
+            infer_time = []
+            # Infer Time Start
+            infer_time_start = time.perf_counter()
+            # Model Construction
+            self.model.fit(self.X_train, self.y_train)
+            # Infer Time Stop
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
+            # Testing Data:
+            cv_predictions = self.model.predict(self.X_cv)
+            cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
+            print(f'INFO: Accuracy (KNeighborsClassification) = {cv_accuracy}')
+            infer_time_average = np.mean(infer_time)
+            print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
+        else:
+            infer_time = []
+            # Infer Time Start
+            infer_time_start = time.perf_counter()
+            # Model Construction
+            self.model.fit(self.X_train, self.y_train)
+            # Infer Time Stop
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
+            # Testing Data:
+            test_predictions = self.model.predict(self.X_test)
+            test_accuracy = accuracy_score(self.y_test, test_predictions)
+            print(f'INFO: Accuracy (KNeighborsClassification) = {test_accuracy}')
+            infer_time_average = np.mean(infer_time)
+            print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
 
 class SVCClassification:
     def __init__(self, X, y, X_train, y_train, X_test, y_test, X_cv, y_cv, C: int = 10, kernel: str = 'poly', degree: int = 3, gamma: str = 'scale', random_state: int = 42) -> None:
@@ -190,143 +250,192 @@ class SVCClassification:
     def __str__(self) -> str:
         return f"SVC(C={self.C}, kernel={self.kernel}, degree={self.degree}, gamma={self.gamma}, random_state={self.random_state})"
     
-    def optimize(self, n_folds: int = 5) -> None:
-        # I will not be including training or inference times in the optimization process;
-        # I will only consider it in the train() function to tabulate and compare the final results.
+    def optimize(self, n_folds: int = 5, further_optimize: bool = False) -> None:
+        if further_optimize:
+            #Parametrization space
+            optimal_parameters = self.model.get_params()
+            #Tuning parameters
+            margin = 0.20
+            n_points = 5
+            C_lower, C_upper = (1-margin) * optimal_parameters['C'], (1+margin) * optimal_parameters['C']
+            C_list = np.linspace(C_lower, C_upper, n_points).tolist()
+            kernel_list = [optimal_parameters['kernel']]
+            degree_lower, degree_upper = (1-margin) * optimal_parameters['degree'], (1+margin) * optimal_parameters['degree']
+            degree_list = [int(x) for x in np.linspace(degree_lower, degree_upper, n_points)]
+            gamma_list = [optimal_parameters['gamma']]
 
-        # Parametrization Space
-        C_list = np.logspace(-1, 2, num=4).tolist()
-        kernel_list = ['linear', 'poly']
-        degree_list = np.arange(1, 10)
-        gamma_list = ['scale', 'auto']
+            parameters = {
+                'C': C_list,
+                'kernel': kernel_list,
+                'degree': degree_list,
+                'gamma': gamma_list,
+                'random_state': [self.random_state]
+            }
 
-        #C_list = [10.0]
-        #kernel_list = ['linear', 'poly']
-        #degree_list = np.arange(1, 2)
-        #gamma_list = ['scale']
+            # Grid Search Construction
+            local_model = SVC()
+            gs = GridSearchCV(local_model, parameters, cv=n_folds, verbose=10, n_jobs=-1)
+            infer_time = []
+            #Setting up the optimization with GridSearch
+            infer_time_start = time.perf_counter()
+            gs.fit(self.X_train, self.y_train)
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
+            
+            # Optimization Info
+            self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
 
+            # Identifying Optimal Model
+            best_model = gs.best_estimator_
+            best_score = gs.best_score_
+            best_param = gs.best_params_
+            self.C, self.kernel, self.degree, self.gamma = best_param['C'], best_param['kernel'], best_param['degree'], best_param['gamma']
 
-        # Dictionary of Parametrization Space
-        parameters = {
-            'C': C_list,
-            'kernel': kernel_list,
-            'degree': degree_list,
-            'gamma': gamma_list,
-            'random_state': [self.random_state]
-        }
+            #Printing the result
+            print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
+            print(f'INFO: Setting the best model as a class attribute')
+            self.model = best_model
+            print(f"INFO: {str(self)}")
+            print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
+            print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
+                {np.mean(self.optimize_info['mean_fit_time'])} and the\
+                mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
+            print('===========================\n')
 
-        # Grid Search Construction
-        local_model = SVC()
-        gs = GridSearchCV(local_model, parameters, cv=n_folds, verbose=10, n_jobs=-1)
-        gs.fit(self.X_train, self.y_train)
-        
-        # Optimization Info
-        self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
-
-        # Identifying Optimal Model
-        best_model = gs.best_estimator_
-        best_score = gs.best_score_
-        best_param = gs.best_params_
-
-        #Printing the result
-        print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
-        self.model = best_model
-        print(f"INFO: {str(self)}")
-        print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
-
-        '''
-        with alive_bar(total) as bar:
-            for element in combinations:
-                C, kernel, degree, gamma = element
-                local_model = SVC(C=C, kernel=kernel, degree=degree, gamma=gamma)
-                local_model.fit(self.X_train, self.y_train)
-
-                ### LIGHT EDITION ###
-                predictions = local_model.predict(self.X_cv)
-                validation_accuracy = accuracy_score(predictions, self.y_cv)
-                dict_of_models[element] = validation_accuracy
-
-                ### CHUNKY EDITION ### 
-                #cross_validation_accuracy = cross_val_score(local_model, self.X, self.y, cv=n_folds)
-                #dict_of_models[element] = np.mean(cross_validation_accuracy)
-
-                # Progress Bar
-                time.sleep(.005)
-                bar()
-        max_accuracy = max(dict_of_models.values())
-        best_combination = [key for key, value in dict_of_models.items() if value == max_accuracy]
-        if len(best_combination) > 1:
-            print(f"STATUS: {len(best_combination)} OPTIMAL MODELS IDENTIFIED! \n")
-            for i, single_best_combination in enumerate(best_combination):
-                C, kernel, degree, gamma = single_best_combination
-                local_model = SVC(C=C, kernel=kernel, degree=degree, gamma=gamma, random_state=self.random_state)
-                local_accuracy = dict_of_models[single_best_combination]
-                print(f"INFO, Model {i+1}: SVC(C={C}, kernel={kernel}, degree={degree}, gamma={gamma}, random_state={self.random_state})")
-                print(f"INFO: Validation Accuracy={local_accuracy} \n")
-            try:
-                chosen_index = int(input(f"Input the model number you would like to preserve: "))
-                print()
-                self.C, self.kernel, self.degree, self.gamma = best_combination[chosen_index-1]
-                self.model = SVC(C=self.C, kernel=self.kernel, degree=self.degree, gamma=self.gamma, random_state=self.random_state)
-            except ValueError:
-                raise ValueError
         else:
-            self.C, self.kernel, self.degree, self.gamma = best_combination[0]
-            self.model = SVC(C=self.C, kernel=self.kernel, degree=self.degree, gamma=self.gamma, random_state=self.random_state)
-            print("STATUS: OPTIMAL MODEL IDENTIFIED!")
-            print(str())
-            print(f"INFO: Validation Accuracy={max_accuracy}") 
+            # Parametrization Space
+            #C_list = np.logspace(-1, 2, num=4).tolist()
+            #kernel_list = ['linear', 'poly']
+            #degree_list = np.arange(1, 10)
+            #gamma_list = ['scale', 'auto']
 
-        '''
+            C_list = [0.1]
+            kernel_list = ['linear', 'poly']
+            degree_list = np.arange(1, 2)
+            gamma_list = ['scale']
+
+
+            # Dictionary of Parametrization Space
+            parameters = {
+                'C': C_list,
+                'kernel': kernel_list,
+                'degree': degree_list,
+                'gamma': gamma_list,
+                'random_state': [self.random_state]
+            }
+
+            # Grid Search Construction
+            local_model = SVC()
+            gs = GridSearchCV(local_model, parameters, cv=n_folds, verbose=10, n_jobs=-1)
+            infer_time = []
+            #Setting up the optimization with GridSearch
+            infer_time_start = time.perf_counter()
+            gs.fit(self.X_train, self.y_train)
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
+            
+            # Optimization Info
+            self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
+
+            # Identifying Optimal Model
+            best_model = gs.best_estimator_
+            best_score = gs.best_score_
+            best_param = gs.best_params_
+            self.C, self.kernel, self.degree, self.gamma = best_param['C'], best_param['kernel'], best_param['degree'], best_param['gamma']
+
+            #Printing the result
+            print(f"STATUS: OPTIMAL MODEL IDENTIFIED!")
+            print(f'INFO: Setting the best model as a class attribute')
+            self.model = best_model
+            print(f"INFO: {str(self)}")
+            print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
+            print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
+                {np.mean(self.optimize_info['mean_fit_time'])} and the\
+                mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
+            print('===========================\n')
         
     
-    def train(self, X_train, y_train, X_test, y_test) -> None:
+    def train(self) -> None:
         print(f"CAUTION: You have just called .train() for SVCClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
+
+        print('\n===========================')
+        input_val = input('Enter True to check with CV, False to check with Test\n')
+        print('===========================\n')
 
         training_time = []
         # Training Time Start
         training_time_start = time.perf_counter()
         # Model Construction
-        self.model.fit(X_train, y_train)
+        self.model.fit(self.X_train, self.y_train)
         # Training Time Stop
         training_time_stop = time.perf_counter()
         training_time.append(training_time_stop - training_time_start)
-        
-        infer_time = []
-        # Infer Time Start
-        infer_time_start = time.perf_counter()
-        # Prediction
-        test_predictions = self.model.predict(self.X_test)
-        # Infer Time Stop
-        infer_time_stop = time.perf_counter()
-        infer_time.append(infer_time_stop - infer_time_start)
 
-        print(f"STATUS: *** CHECKING ACCURACY ON TEST SET ***")
-        test_accuracy = accuracy_score(self.y_test, test_predictions)
-         
-        # Report Performance
-        print(f'INFO: Accuracy (SVCClassification) = {test_accuracy}')
-        training_time_average = np.mean(training_time)
-        infer_time_average = np.mean(infer_time)
-        print(f"INFO: Average Training Time (SVCClassification) = {training_time_average}")
-        print(f'INFO: Average Inference Time (SVCClassification) = {infer_time_average}')
+        if input_val:
+            infer_time = []
+            # Infer Time Start
+            infer_time_start = time.perf_counter()
+            # Prediction
+            cv_predictions = self.model.predict(self.X_cv)
+            # Infer Time Stop
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
 
-        self.training_time = training_time_average
-        self.inference_time = infer_time_average
-        self.accuracy_test = test_accuracy
-        self.error_rate_test = 1-test_accuracy
+            print(f"STATUS: *** CHECKING ACCURACY ON VALIDATION SET ***")
+            cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
+            
+            # Report Performance
+            print(f'INFO: Accuracy (SVCClassification) = {cv_accuracy}')
+            training_time_average = np.mean(training_time)
+            infer_time_average = np.mean(infer_time)
+            print(f"INFO: Average Training Time (SVCClassification) = {training_time_average}")
+            print(f'INFO: Average Inference Time (SVCClassification) = {infer_time_average}')
 
-        SVC_table = BeautifulTable()
-        SVC_table.columns.header = ["", "Average Training Time","Average Inference Time","Test Accuracy"]
-        SVC_table.rows.append(['Optimal SVC', training_time_average, infer_time_average, test_accuracy])
-        print(SVC_table)
+            self.training_time = training_time_average
+            self.inference_time = infer_time_average
+            self.accuracy_test = cv_accuracy
+            self.error_rate_test = 1-cv_accuracy
+
+            SVC_table = BeautifulTable()
+            SVC_table.columns.header = ["", "Average Training Time","Average Inference Time","Validation Accuracy"]
+            SVC_table.rows.append(['Optimal SVC', training_time_average, infer_time_average, cv_accuracy])
+            print(SVC_table)
+        else:
+            infer_time = []
+            # Infer Time Start
+            infer_time_start = time.perf_counter()
+            # Prediction
+            test_predictions = self.model.predict(self.X_test)
+            # Infer Time Stop
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
+
+            print(f"STATUS: *** CHECKING ACCURACY ON TEST SET ***")
+            test_accuracy = accuracy_score(self.y_test, test_predictions)
+            
+            # Report Performance
+            print(f'INFO: Accuracy (SVCClassification) = {test_accuracy}')
+            training_time_average = np.mean(training_time)
+            infer_time_average = np.mean(infer_time)
+            print(f"INFO: Average Training Time (SVCClassification) = {training_time_average}")
+            print(f'INFO: Average Inference Time (SVCClassification) = {infer_time_average}')
+
+            self.training_time = training_time_average
+            self.inference_time = infer_time_average
+            self.accuracy_test = test_accuracy
+            self.error_rate_test = 1-test_accuracy
+
+            SVC_table = BeautifulTable()
+            SVC_table.columns.header = ["", "Average Training Time","Average Inference Time","Test Accuracy"]
+            SVC_table.rows.append(['Optimal SVC', training_time_average, infer_time_average, test_accuracy])
+            print(SVC_table)
         
 class SGDClassification:
     '''SGD Classifier Common Class'''
     def __init__(self, X, y, X_train, y_train, X_test, y_test, X_cv, y_cv, loss: str = 'log_loss', 
                  penalty: str | None = 'l2', alpha: float = 0.0001, 
-                 max_iter: int = 1000, learning_rate: str = 'constant', eta0: float = 0.001, 
+                 max_iter: int = 1000, learning_rate: str = 'constant', eta0: float = 0.1, 
                  random_state: int = 42, warm_start: bool = True) -> None:
         self.X = X
         self.y = y
@@ -463,7 +572,7 @@ class SGDClassification:
             
             print('===========================\n')
 
-    def train(self, n_batches: int = 800, show_loss: bool = True, show_acc: bool = False) -> None:
+    def train(self, n_batches: int = 300, show_loss: bool = True, show_acc: bool = False) -> None:
         '''Train the SGD classifier with the best parameter'''
         
         print('\n===========================')
@@ -512,17 +621,19 @@ class SGDClassification:
             print(f'INFO: Mean Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')
             print(f'INFO: Average Inference Time (SGDClassification) = {infer_time_average}')
             if show_loss:
-                plt.plot(sgd_train_loss, label = 'Train Log Loss')
-                plt.plot(sgd_other_loss, label = 'Validation Log Loss')
+                plt.plot(sgd_train_loss, label = 'Train Log Loss', color='blue')
+                plt.plot(sgd_other_loss, label = 'Validation Log Loss', color='red')
                 plt.xlabel('Epoch Number')
                 plt.ylabel('Log Losses')
+                plt.title('Log Loss vs Number of Epochs')
                 plt.legend()
                 plt.show()
             if show_acc:
-                plt.plot(sgd_train_score, label = 'Train Error Rate')
-                plt.plot(sgd_other_score, label = 'Validation Error Rate')
+                plt.plot(sgd_train_score, label = 'Train Error Rate', color='blue')
+                plt.plot(sgd_other_score, label = 'Validation Error Rate', color='green')
                 plt.xlabel('Epoch Number')
                 plt.ylabel('Error Rate')
+                plt.title('Error Rate vs Number of Epochs')
                 plt.legend()
                 plt.show()
         else:
@@ -563,17 +674,19 @@ class SGDClassification:
             print(f'INFO: Average Inference Time (SGDClassification) = {infer_time_average}')
 
             if show_loss:
-                plt.plot(sgd_train_loss, label = 'Train Log Loss')
-                plt.plot(sgd_other_loss, label = 'Test Log Loss')
+                plt.plot(sgd_train_loss, label = 'Train Log Loss', color='blue')
+                plt.plot(sgd_other_loss, label = 'Test Log Loss', color='red')
                 plt.xlabel('Epoch Number')
                 plt.ylabel('Log Losses')
+                plt.title('Log Loss vs Number of Epochs')
                 plt.legend()
                 plt.show()
             if show_acc:
-                plt.plot(sgd_train_score, label = 'Train Error Rate')
-                plt.plot(sgd_other_score, label = 'Test Error Rate')
+                plt.plot(sgd_train_score, label = 'Train Error Rate', color='blue')
+                plt.plot(sgd_other_score, label = 'Test Error Rate', color='red')
                 plt.xlabel('Epoch Number')
                 plt.ylabel('Error Rate')
+                plt.title('Error Rate vs Number of Epochs')
                 plt.legend()
                 plt.show()
 
@@ -616,8 +729,9 @@ class Data_PCA:
         self.components = self.pca.components_
         variance_summed = [sum(self.copy_explained[:i]) for i in range(1, len(self.copy_explained))]
         plt.title("PCA Analysis")
-        plt.xlabel("Number of Principal Components (Descending Order)")
+        plt.xlabel("Number of Principal Components (Descending Order of Importance)")
         plt.ylabel("Cumulative Sum of PC's")
+        plt.title('PCA Cumulative Sum with Threshold')
         plt.plot(range(1, len(self.components)), variance_summed, 'or--')
         plt.axhline(y = self.threshold, color = 'b', linestyle = ':', label=f'Threshold={self.threshold}') 
         plt.legend()

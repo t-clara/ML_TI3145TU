@@ -140,10 +140,26 @@ class USdata:
 
         # Changing sex to binary (female vs. male become binary states)
         self.X['sex'] = le.fit_transform(self.X['sex'])
-
-        #Standardize- age, education-num and hours-per-week columns
-        #Does not affect the dummy classifier
         sc = StandardScaler(with_mean=with_mean)
+        '''
+        #Standardize- age, education-num and hours-per-week columns
+        sc = StandardScaler(with_mean=with_mean)
+        for col in ['age','education-num','hours-per-week']:
+            train_col_scale = self.X_train[[col]]
+            train_col_scale_test = self.X_test[[col]]
+            train_col_scale_cv = self.X_cv[[col]]
+            train_scaler_col = sc.fit_transform(train_col_scale)
+            train_scaler_col_test = sc.transform(train_col_scale_test)
+            train_scaler_col_cv = sc.transform(train_col_scale_cv)
+            train_scaler_col = pd.DataFrame(train_scaler_col,columns=train_col_scale.columns)
+            train_scaler_col_test = pd.DataFrame(train_scaler_col_test,columns=train_col_scale.columns)
+            train_scaler_col_cv = pd.DataFrame(train_scaler_col_cv,columns=train_col_scale.columns)
+            self.X_train[col]= train_scaler_col[col]
+            self.X_test[col]= train_scaler_col_test[col]
+            self.X_cv[col]= train_scaler_col_cv[col]
+
+
+        '''
         train_col_scale = self.X_train[['age','education-num','hours-per-week']]
         train_col_scale_test = self.X_test[['age','education-num','hours-per-week']]
         train_col_scale_cv = self.X_cv[['age','education-num','hours-per-week']]
@@ -169,6 +185,7 @@ class USdata:
         self.X_cv['age']= train_scaler_col_cv['age']
         self.X_cv['education-num']= train_scaler_col_cv['education-num']
         self.X_cv['hours-per-week']= train_scaler_col_cv['hours-per-week']
+        
 
         #Tabulating the rest of the tables as binary
         # Categorical classes are converted to columns with name

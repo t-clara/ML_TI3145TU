@@ -67,6 +67,7 @@ us.data_information(False)
 #us.display()
 #us.unique()
 us.split(test_size=0.15, cv_size=0.15)
+'''
 pcamodel = Data_PCA(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv, threshold=0.99)
 pcamodel.preprocess()
 pcamodel.remove_nan()
@@ -80,8 +81,9 @@ us.X_test = pcamodel.X_test
 us.y_test = pcamodel.y_test
 us.X_cv = pcamodel.X_cv
 us.y_cv = pcamodel.y_cv
-#us.preprocess(with_mean=True)
-#us.remove_nan()
+'''
+us.preprocess(with_mean=True)
+us.remove_nan()
 #us.unique()
 us.tonumpy()
 
@@ -101,22 +103,19 @@ mn.preprocessing()
 
 ### K NEIGHBORS ###
 
-#KNN_US = KNeighborsClassification(X=us.X, y=us.y, 
-                                         #X_train=us.X_train, y_train=us.y_train, 
-                                         #X_test=us.X_test, y_test=us.y_test)
-#KNN_US.CV_tune_K(max_n_neighbors=20)
-#KNN_US.train()
-
-### PRINCIPAL COMPONENT ANALYSIS ###
-
-#print(us.X)
-#us.X_cv
+knn = KNeighborsClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+knn.train()
+knn.optimize(max_n_neighbors=100)
+knn.train()
 
 ### SUPPORT VECTOR MACHINE ###
 
-svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
-svm.optimize()
-svm.train(us.X_train, us.y_train, us.X_test, us.y_test)
+
+#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#svm.optimize()
+#svm.train()
+#svm.optimize(further_optimize=True)
+
 
 ### DECISION TREE ###
 
