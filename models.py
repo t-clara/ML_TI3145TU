@@ -104,11 +104,9 @@ class DecisionTreeClassification:
         '''
         self.all_models.append(str(self))
         
-    def train(self, labels):
+    def train(self, labels, input_val = 'True'):
 
-        print('\n===========================')
-        input_val = input('Enter True to check with CV, False to check with Test\n')
-        print('===========================\n')
+        input_val = input_val
 
         if input_val == 'True':
             train_time = []
@@ -221,13 +219,12 @@ class KNeighborsClassification:
         
         self.all_models.append(str(self))
 
-    def train(self):
+    def train(self, input_val = 'True'):
         print(f"CAUTION: You have just called .train() for KNeighborsClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
 
-        print('\n===========================')
-        input_val = input('Enter True to check with CV, False to check with Test\n')
-        print('===========================\n')
+        
+        input_val = input_val
 
         if input_val == 'True':
             train_time = []
@@ -399,13 +396,12 @@ class SVCClassification:
             self.all_models.append(str(self))
         
     
-    def train(self) -> None:
+    def train(self, input_val = 'True') -> None:
         print(f"CAUTION: You have just called .train() for SVCClassification, make sure that you fed the training data.")
         print(f"STATUS: Training for {str(self)}...")
 
-        print('\n===========================')
-        input_val = input('Enter True to check with CV, False to check with Test\n')
-        print('===========================\n')
+        
+        input_val = input_val
 
         train_time = []
         # Train Time Start
@@ -630,12 +626,12 @@ class SGDClassification:
 
             self.all_models.append(str(self))
 
-    def train(self, n_batches: int = 300, show_loss: bool = True, show_acc: bool = False) -> None:
+    def train(self, n_batches: int = 300, show_loss: bool = True, show_acc: bool = False, input_val = 'True') -> None:
         '''Train the SGD classifier with the best parameter'''
         
-        print('\n===========================')
-        input_val = input('Enter True to check with CV, False to check with Test\n')
-        print('===========================\n')
+        
+        input_val = input_val
+        
 
         #Disclaimers
         print(f"CAUTION: You have just called .train() for SGDClassification, make sure that you fed the training data.")
