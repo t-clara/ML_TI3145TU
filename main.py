@@ -35,7 +35,7 @@ from beautifultable import BeautifulTable
 
 import mnist, ninefour
 import pandas as pd
-from models import KNeighborsClassification, Data_PCA, DecisionTreeClassification, SVCClassification, SGDClassification
+from models import KNeighborsClassification, Data_PCA, DecisionTreeClassification, SVCClassification, SGDClassification, Dummy
 
 ########################################
 #                                      #
@@ -66,7 +66,6 @@ y = pd.read_csv('data\census_labels.csv', sep=',', header=0)
 us = ninefour.USdata(X=X, y=y)
 us.data_information(False)
 #print(col)
-us.dummy(True)
 #us.display()
 #us.unique()
 us.split(test_size=0.15, cv_size=0.15)
@@ -101,7 +100,9 @@ mn = mnist.MNIST(X, y)
 mn.split(test_size=0.15,cv_size=0.15)
 mn.preprocessing()
 '''
-
+### DUMMY ###
+dummy = Dummy(us)
+dummy.train()
 
 ### K NEIGHBORS ###
 
@@ -138,7 +139,8 @@ svc = SVCClassification(us)
 svc.train()
 
 class Compare:
-    def __init__(self, DT_model, KNN_model, SVC_model, SGD_model) -> None:
+    def __init__(self, dummy_model, DT_model, KNN_model, SVC_model, SGD_model) -> None:
+        self.dummy_model = dummy_model
         self.DT_model = DT_model
         self.KNN_model = KNN_model
         self.SVC_model = SVC_model
@@ -146,19 +148,33 @@ class Compare:
 
     def tabulate(self):
         comparison_table = BeautifulTable()
-        comparison_table.columns.header = ["Algorithm", "Test Accuracy", "Average Training Time", "Average Inference Time"]
-        comparison_table.rows.append(['Dummy (Baseline)', self.dummy_model.accuracy_train, self.dummy_model.training_time, self.dummy_model.inference_time])
-        comparison_table.rows.append(['DT', self.DT_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])
-        comparison_table.rows.append(['SGD', self.SGD_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])    
-        comparison_table.rows.append(['KNN', self.KNN_model.accuracy_train, self.KNN_model.training_time, self.KNN_model.inference_time])
-        comparison_table.rows.append(['SVC', self.SVC_model.accuracy_train, self.SVC_model.training_time, self.SVC_model.inference_time])
+        comparison_table.columns.header = ["Algorithm", "Validation Accuracy", "Average Training Time", "Average Inference Time"]
+        comparison_table.rows.append(['Dummy (Baseline)', self.dummy_model.accuracy_val, self.dummy_model.training_time, self.dummy_model.inference_time])
+        comparison_table.rows.append(['DT', self.DT_model.accuracy_val[0], self.DT_model.training_time[0], self.DT_model.inference_time[0]])
+        comparison_table.rows.append(['SGD', self.SGD_model.accuracy_val[0], self.SGD_model.training_time[0], self.SGD_model.inference_time[0]])    
+        comparison_table.rows.append(['KNN', self.KNN_model.accuracy_val[0], self.KNN_model.training_time[0], self.KNN_model.inference_time[0]])
+        comparison_table.rows.append(['SVC', self.SVC_model.accuracy_val[0], self.SVC_model.training_time[0], self.SVC_model.inference_time[0]])
         print(comparison_table)
 
-    def bar_chart_accuracies(self):
+    def bar_chart_validation_accuracy(self):
+        untuned = [np.round(self.DT_model.accuracy_val[0]*100, 2), np.round(self.SGD_model.accuracy_val[0]*100, 2), np.round(self.KNN_model.accuracy_val[0]*100, 2), np.round(self.SVC_model.accuracy_val[0]*100, 2)]
+        tuned = [np.round(self.DT_model.accuracy_val[-1]*100, 2), np.round(self.SGD_model.accuracy_val[-1]*100, 2), np.round(self.KNN_model.accuracy_val[-1]*100, 2), np.round(self.SVC_model.accuracy_val[-1]*100, 2)]
+        model_types = ["DT", "SGD", "KNN", "SVC"]
+        df = pd.DataFrame({'Untuned': untuned,'Tuned': tuned}, index=model_types)
+        ax = df.plot.bar(rot=0, color={"Untuned": "green", "Tuned": "red"})
+        for container in ax.containers:
+            ax.bar_label(container)
+        ax.set_ylabel('Validation Accuracy')
+        ax.set_title('Model Validation Accuracies (Untuned vs. Tuned)')
+        ax.set_ylim(0, 100)
+        plt.show()
+
+        '''
         model_types = ("DT", "SGD", "KNN", "SVC")
         ### REQUIRES IMPLEMENTATION OF MODEL ATTRIBUTES IN models.py ###
         model_accuracies = {
-            'Validation Accuracy (Untuned)': (self.DT_model.accuracy_val[0], self.SGD_model.accuracy_val[0], self.KNN_model.accuracy_val[0], self.SVC_model.accuracy_val[0])
+            'Untuned': (self.DT_model.accuracy_val[0], self.SGD_model.accuracy_val[0], self.KNN_model.accuracy_val[0], self.SVC_model.accuracy_val[0]),
+            'Tuned': (self.DT_model.accuracy_val[0], self.SGD_model.accuracy_val[0], self.KNN_model.accuracy_val[0], self.SVC_model.accuracy_val[0])
         }
 
         x = np.arange(len(model_types))  # the label locations
@@ -170,15 +186,44 @@ class Compare:
         for attribute, measurement in model_accuracies.items():
             offset = width * multiplier
             rects = ax.bar(x + offset, measurement, width, label=attribute)
-            ax.bar_label(rects, padding=2)
+            ax.bar_label(rects, padding=4.5)
             multiplier += 1
         
         # Add some text for labels, title and custom x-axis tick labels, etc.
-        ax.set_ylabel('Accuracies')
-        ax.set_title('Model Accuracies (Untuned vs. Tuned)')
+        ax.set_ylabel('Validation Accuracy')
+        ax.set_title('Model Validation Accuracies (Untuned vs. Tuned)')
         ax.set_xticks(x + width, model_types)
         ax.legend(loc='upper left')
         ax.set_ylim(0, 1)
+        plt.show()
+        '''
+
+    def bar_chart_training_time(self):
+        untuned = [np.round(self.DT_model.training_time[0], 2), np.round(self.SGD_model.training_time[0], 2), np.round(self.KNN_model.training_time[0], 2), np.round(self.SVC_model.training_time[0], 2)]
+        tuned = [np.round(self.DT_model.training_time[-1], 2), np.round(self.SGD_model.training_time[-1], 2), np.round(self.KNN_model.training_time[-1], 2), np.round(self.SVC_model.training_time[-1], 2)]
+        combined = untuned + tuned
+        model_types = ["DT", "SGD", "KNN", "SVC"]
+        df = pd.DataFrame({'Untuned': untuned,'Tuned': tuned}, index=model_types)
+        ax = df.plot.bar(rot=0, color={"Untuned": "green", "Tuned": "red"})
+        for container in ax.containers:
+            ax.bar_label(container)
+        ax.set_ylabel('Training Time [s]')
+        ax.set_title('Model Training Times (Untuned vs. Tuned)')
+        ax.set_ylim(0, np.ceil(max(combined)*1.2))
+        plt.show()
+
+    def bar_chart_inference_time(self):
+        untuned = [np.round(self.DT_model.inference_time[0]*1000, 2), np.round(self.SGD_model.inference_time[0]*1000, 2), np.round(self.KNN_model.inference_time[0]*1000, 2), np.round(self.SVC_model.inference_time[0]*1000, 2)]
+        tuned = [np.round(self.DT_model.inference_time[-1]*1000, 2), np.round(self.SGD_model.inference_time[-1]*1000, 2), np.round(self.KNN_model.inference_time[-1]*1000, 2), np.round(self.SVC_model.inference_time[-1]*1000, 2)]
+        combined = untuned + tuned
+        model_types = ["DT", "SGD", "KNN", "SVC"]
+        df = pd.DataFrame({'Untuned': untuned,'Tuned': tuned}, index=model_types)
+        ax = df.plot.bar(rot=0, color={"Untuned": "green", "Tuned": "red"})
+        for container in ax.containers:
+            ax.bar_label(container)
+        ax.set_ylabel('Inference Time [ms]')
+        ax.set_title('Model Inference Times (Untuned vs. Tuned)')
+        ax.set_ylim(0, np.ceil(max(combined)*1.2))
         plt.show()
 
     def display_models(self):
@@ -198,6 +243,9 @@ class Compare:
         print(f"UNTUNED: {self.SGD_model.all_models[0]}")
         print(f"TUNED: {self.SGD_model.all_models[-1]}\n")
 
-compare = Compare(knn, svc, dt, sgd)
-compare.bar_chart_accuracies()
+compare = Compare(dummy, knn, svc, dt, sgd)
+compare.tabulate()
+compare.bar_chart_validation_accuracy()
+compare.bar_chart_training_time()
+compare.bar_chart_inference_time()
 compare.display_models()

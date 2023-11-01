@@ -711,11 +711,11 @@ class SGDClassification:
             if isinstance(self.training_time, type(None)):
                 self.training_time = [np.mean(train_time)]
                 self.inference_time = [np.mean(infer_time)]
-                self.accuracy_val = [np.mean(sgd_other_score)]
+                self.accuracy_val = [1 - np.mean(sgd_other_score)]
             else:
                 self.training_time.append(np.mean(train_time))
                 self.inference_time.append(np.mean(infer_time))
-                self.accuracy_val.append(np.mean(sgd_other_score))
+                self.accuracy_val.append(1 - np.mean(sgd_other_score))
 
             if show_loss:
                 plt.plot(sgd_train_loss, label = 'Train Log Loss', color='blue')
@@ -973,7 +973,7 @@ class Dummy:
         cv = ShuffleSplit(n_splits=self.n_splits, test_size=self.test_size, random_state=self.random_state)
         infer_stop = time.perf_counter()
         infer_time.append(infer_stop - infer_start)
-        cross_val_details = cross_validate(local_model, self.X, self.y, cv=cv, n_jobs=2)
+        cross_val_details = cross_validate(local_model, self.X, self.y, cv=cv, n_jobs=2, return_train_score=True)
         self.accuracy_val = np.mean(cross_val_details['train_score'])
         self.training_time = np.mean(train_time)
         self.inference_time = np.mean(infer_time)
