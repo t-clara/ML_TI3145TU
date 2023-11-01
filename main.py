@@ -108,33 +108,37 @@ dummy.train()
 
 knn = KNeighborsClassification(us)
 knn.train()
+knn.optimize(max_n_neighbors=50)
+knn.train()
 #print(knn.accuracy_val, knn.training_time, knn.inference_time, knn.accuracy_test)
-#knn.optimize(max_n_neighbors=50)
-print(knn.accuracy_val, knn.training_time, knn.inference_time)
+#print(knn.accuracy_val, knn.training_time, knn.inference_time)
 
 ### SUPPORT VECTOR MACHINE ###
 
 svm = SVCClassification(us)
-#svm.optimize()
 svm.train()
-#svm.optimize(further_optimize=True)
+svm.optimize()
+svm.optimize(further_optimize=True)
+svm.train()
 
 ### DECISION TREE ###
 
 dt = DecisionTreeClassification(us)
-#dt.optimize(us.X_train, us.y_train, us.X_test, us.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
-#dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
+dt.train(labels=col)
+dt.optimize(max_max_depth=5, max_min_samples_leaf=5)
 dt.train(labels=col)
 
 sgd = SGDClassification(us)
-#sgd.optimize()
-sgd.train(show_loss=False, show_acc=True)
-#sgd.optimize(further_optimize=True)
-#sgd.train(show_loss=False, show_acc=True)
+sgd.train(show_loss=False, show_acc=False)
+sgd.optimize()
+sgd.optimize(further_optimize=True)
+sgd.train(show_loss=False, show_acc=False)
 #sgd.display()
 
 svc = SVCClassification(us)
-#svc.optimize()
+svc.train()
+svc.optimize()
+svc.optimize(further_optimize=True)
 svc.train()
 
 class Compare:
