@@ -184,7 +184,6 @@ class KNeighborsClassification:
     def optimize(self, max_n_neighbors: int, n_folds: int = 5) -> None:
 
         #validation_accuracy = []
-        infer_time = []
         n_folds = n_folds
 
         #Parameter space
@@ -199,12 +198,12 @@ class KNeighborsClassification:
         # Grid Search Construction
         local_model = KNeighborsClassifier()
         gs = GridSearchCV(local_model, parameters, cv=n_folds, verbose=10, n_jobs=-1)
-        infer_time = []
+        opt_time = []
         #Setting up the optimization with GridSearch
-        infer_time_start = time.perf_counter()
+        opt_time_start = time.perf_counter()
         gs.fit(self.X_train, self.y_train)
-        infer_time_stop = time.perf_counter()
-        infer_time.append(infer_time_stop - infer_time_start)
+        opt_time_stop = time.perf_counter()
+        opt_time.append(opt_time_stop - opt_time_start)
         
         # Optimization Info
         self.optimize_info = {'mean_fit_time': gs.cv_results_['mean_fit_time'], 'mean_score_time': gs.cv_results_['mean_score_time']}
@@ -221,7 +220,7 @@ class KNeighborsClassification:
         self.model = best_model
         print(f"INFO: {str(self)}")
         print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
-        print(f"INFO: The model took {np.mean(infer_time)} seconds to optimize, the mean fit time was\
+        print(f"INFO: The model took {np.mean(opt_time_stop)} seconds to optimize, the mean fit time was\
             {np.mean(self.optimize_info['mean_fit_time'])} and the\
             mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
         print('===========================\n')
@@ -252,11 +251,10 @@ class KNeighborsClassification:
             # Infer Time Start
             infer_time_start = time.perf_counter()
             cv_predictions = self.model.predict(self.X_cv)
-            infer_time_stop = time.perf_counter()
-            infer_time.append(infer_time_stop - infer_time_start)
-            print(f'INFO: Average Inference Time (KNeighborsClassification) = {np.mean(infer_time)}')
 
             cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
+            infer_time_stop = time.perf_counter()
+            infer_time.append(infer_time_stop - infer_time_start)
             print(f'INFO: Validation Accuracy (KNeighborsClassification) = {cv_accuracy}')
             infer_time_average = np.mean(infer_time)
             print(f'INFO: Average Inference Time (KNeighborsClassification) = {infer_time_average}')
@@ -437,11 +435,11 @@ class SVCClassification:
             infer_time_start = time.perf_counter()
             # Prediction
             cv_predictions = self.model.predict(self.X_cv)
+
+            cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
             # Infer Time Stop
             infer_time_stop = time.perf_counter()
             infer_time.append(infer_time_stop - infer_time_start)
-
-            cv_accuracy = accuracy_score(self.y_cv, cv_predictions)
             
             # Report Performance
             print(f'INFO: Validation Accuracy (SVCClassification) = {cv_accuracy}')
@@ -663,15 +661,9 @@ class SGDClassification:
             infer_time = []
             with alive_bar(len(range(n_batches))) as bar:
                 for _ in range(n_batches):
-                    # Train Time Start
-                    train_time_start = time.perf_counter()
 
                     # Model Construction
                     self.model.partial_fit(self.X_train, self.y_train, classes = np.unique(self.y_train))
-                    
-                    # Train Time Stop
-                    train_time_stop = time.perf_counter()
-                    train_time.append(train_time_stop - train_time_start)
                     
                     # Infer Time Start
                     infer_time_start = time.perf_counter()
@@ -702,6 +694,14 @@ class SGDClassification:
                     #Bar settings
                     time.sleep(.005)
                     bar()
+
+                #Train Time Start
+                model_test_train = self.model
+                train_time_start = time.perf_counter()
+                model_test_train.fit(self.X_train, self.y_train)
+                train_time_stop = time.perf_counter()
+                # Train Time Stop
+                train_time.append(train_time_stop - train_time_start)
 
             infer_time_average = np.mean(infer_time)
             print(f'INFO: Mean Validation Accuracy (SGDClassification) = {1 - np.mean(sgd_other_score)}')

@@ -110,7 +110,6 @@ knn = KNeighborsClassification(us)
 knn.train()
 #print(knn.accuracy_val, knn.training_time, knn.inference_time, knn.accuracy_test)
 #knn.optimize(max_n_neighbors=50)
-knn.train()
 print(knn.accuracy_val, knn.training_time, knn.inference_time)
 
 ### SUPPORT VECTOR MACHINE ###
@@ -243,9 +242,11 @@ class Compare:
         print(f"UNTUNED: {self.SGD_model.all_models[0]}")
         print(f"TUNED: {self.SGD_model.all_models[-1]}\n")
 
-compare = Compare(dummy, knn, svc, dt, sgd)
+compare = Compare(dummy_model=dummy, DT_model=dt, KNN_model=knn, SVC_model=svc, SGD_model=sgd)
 compare.tabulate()
 compare.bar_chart_validation_accuracy()
 compare.bar_chart_training_time()
 compare.bar_chart_inference_time()
 compare.display_models()
+
+print(knn.inference_time)
