@@ -124,10 +124,3 @@ class MNIST:
         count = {digit: self.y.count(digit) for digit in classes}
         print(f'There are {classes_count} classes of the data and these classes are {classes}')
         print(f'Every class has the following instace distribution {count}')
-    
-    def dummy(self, X, y) -> None:
-        dummy_classifier = DummyClassifier(strategy='most_frequent', random_state=self.random_state)
-        dummy_classifier.fit(X, y)
-        dummy_classifier.predict(X)
-        score = dummy_classifier.score(X, y)
-        print(score)

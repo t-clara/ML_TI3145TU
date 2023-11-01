@@ -200,19 +200,19 @@ class USdata:
         self.X_test = pd.get_dummies(self.X, drop_first=True)
         self.X_cv = pd.get_dummies(self.X, drop_first=True)
 
-
-    def dummy(self, n_split: int = 10, test_size: float = 0.5, show_average: int = False) -> None:
-        '''Construction of a Dummy classifier using CV'''
-        cv = ShuffleSplit(n_splits=n_split, test_size=test_size, random_state=self.random_state)
-        dummy_classifier = DummyClassifier(strategy='most_frequent', random_state=self.random_state)
-        self.cv_results_dummy = cross_validate(dummy_classifier, self.X, self.y, cv=cv, n_jobs=2)
-        copy = list(self.cv_results_dummy['test_score'])
-        if show_average:
-            for i in range(len(copy)):
-                print(copy[i])
-        else:
-            print(np.mean(copy))
-        self.dummy = dummy_classifier
+    
+    #def dummy(self, n_split: int = 10, test_size: float = 0.5, show_average: int = False) -> None:
+    #    '''Construction of a Dummy classifier using CV'''
+    #    cv = ShuffleSplit(n_splits=n_split, test_size=test_size, random_state=self.random_state)
+    #    dummy_classifier = DummyClassifier(strategy='most_frequent', random_state=self.random_state)
+    #    self.cv_results_dummy = cross_validate(dummy_classifier, self.X, self.y, cv=cv, n_jobs=2)
+    #    copy = list(self.cv_results_dummy['test_score'])
+    #    if show_average:
+    #        for i in range(len(copy)):
+    #            print(copy[i])
+    #    else:
+    #        print(np.mean(copy))
+    #    self.dummy = dummy_classifier
 
     def split(self, test_size: float, cv_size: float | None = None):
         '''Create a training/test split. Alternatively, you can have a validation set'''

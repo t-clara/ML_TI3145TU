@@ -20,7 +20,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import cross_val_score, GridSearchCV
+from sklearn.model_selection import cross_val_score, GridSearchCV, ShuffleSplit, cross_validate
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import log_loss, accuracy_score
 from sklearn import tree
@@ -935,3 +935,48 @@ class Data_PCA:
         self.X_train, self.y_train = train_concat.iloc[:, :-1], train_concat.iloc[:, -1:]
         self.X_test, self.y_test = test_concat.iloc[:, :-1], test_concat.iloc[:, -1:]
         self.X_cv, self.y_cv = cv_concat.iloc[:, :-1], cv_concat.iloc[:, -1:]
+class Dummy:
+    '''Dummy Classifier used as a Baseline'''
+    def __init__(self, data, random_state: int = 42, n_splits: int = 5, test_size: float = 0.15) -> None:
+        self.data = data
+        self.X = data.X
+        self.y = data.y
+        self.X_train = data.X_train
+        self.y_train = data.y_train
+        self.X_test = data.X_test
+        self.y_test = data.y_test
+        self.X_cv = data.X_cv
+        self.y_cv = data.y_cv
+        self.random_state = random_state
+        self.n_splits = n_splits
+        self.test_size = test_size
+        self.dummy_classifier = DummyClassifier(strategy='most_frequent', random_state=self.random_state)
+        #
+        self.accuracy_val = None
+        self.training_time = None
+        self.inference_time = None
+        self.accuracy_test = None
+
+    def train(self) -> None:
+        local_model = self.dummy_classifier
+    
+        #Starting Train and Timer
+        train_time = []
+        train_start = time.perf_counter()
+        local_model.fit(self.X, self.y)
+        train_stop = time.perf_counter()
+        train_time.append(train_stop - train_start)
+
+        #Starting Predict and Infer Time
+        infer_time = []
+        infer_start = time.perf_counter()
+        cv = ShuffleSplit(n_splits=self.n_splits, test_size=self.test_size, random_state=self.random_state)
+        infer_stop = time.perf_counter()
+        infer_time.append(infer_stop - infer_start)
+        cross_val_details = cross_validate(local_model, self.X, self.y, cv=cv, n_jobs=2)
+        self.accuracy_val = np.mean(cross_val_details['train_score'])
+        self.training_time = np.mean(train_time)
+        self.inference_time = np.mean(infer_time)
+        self.accuracy_test = np.mean(cross_val_details['test_score'])
+        
+
