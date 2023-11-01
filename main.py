@@ -108,41 +108,37 @@ mn.preprocessing()
 knn = KNeighborsClassification(us)
 knn.train()
 #print(knn.accuracy_val, knn.training_time, knn.inference_time, knn.accuracy_test)
-knn.optimize(max_n_neighbors=50)
+#knn.optimize(max_n_neighbors=50)
 knn.train()
 print(knn.accuracy_val, knn.training_time, knn.inference_time)
 
 ### SUPPORT VECTOR MACHINE ###
 
-
-
-#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+svm = SVCClassification(us)
 #svm.optimize()
-#svm.train()
+svm.train()
 #svm.optimize(further_optimize=True)
-
 
 ### DECISION TREE ###
 
-#dt = DecisionTreeClassification(us.X_train, us.y_train, us.X_cv, us.y_cv)
+dt = DecisionTreeClassification(us)
 #dt.optimize(us.X_train, us.y_train, us.X_test, us.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
-#dt.train(us.X_train, us.y_train, labels=col)
+dt.train(labels=col)
 
-#sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+sgd = SGDClassification(us)
 #sgd.optimize()
-#sgd.train(show_loss=False, show_acc=True)
+sgd.train(show_loss=False, show_acc=True)
 #sgd.optimize(further_optimize=True)
 #sgd.train(show_loss=False, show_acc=True)
 #sgd.display()
 
-#svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+svc = SVCClassification(us)
 #svc.optimize()
-#svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
+svc.train()
 
 class Compare:
-    def __init__(self, dummy_model, DT_model, KNN_model, SVC_model, SGD_model) -> None:
-        self.dummy_model = dummy_model
+    def __init__(self, DT_model, KNN_model, SVC_model, SGD_model) -> None:
         self.DT_model = DT_model
         self.KNN_model = KNN_model
         self.SVC_model = SVC_model
@@ -156,19 +152,13 @@ class Compare:
         comparison_table.rows.append(['SGD', self.SGD_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])    
         comparison_table.rows.append(['KNN', self.KNN_model.accuracy_train, self.KNN_model.training_time, self.KNN_model.inference_time])
         comparison_table.rows.append(['SVC', self.SVC_model.accuracy_train, self.SVC_model.training_time, self.SVC_model.inference_time])
-        comparison_table.rows.append(['Dummy (Baseline)', self.dummy_model.accuracy_train, self.dummy_model.training_time, self.dummy_model.inference_time])
-        comparison_table.rows.append(['DT', self.DT_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])
-        comparison_table.rows.append(['SGD', self.SGD_model.accuracy_train, self.DT_model.training_time, self.DT_model.inference_time])    
-        comparison_table.rows.append(['KNN', self.KNN_model.accuracy_train, self.KNN_model.training_time, self.KNN_model.inference_time])
-        comparison_table.rows.append(['SVC', self.SVC_model.accuracy_train, self.SVC_model.training_time, self.SVC_model.inference_time])
         print(comparison_table)
 
     def bar_chart_accuracies(self):
         model_types = ("DT", "SGD", "KNN", "SVC")
         ### REQUIRES IMPLEMENTATION OF MODEL ATTRIBUTES IN models.py ###
         model_accuracies = {
-            'Training Accuracy': (self.DT_model.accuracy_train, self.SGD_model.accuracy_train, self.KNN_model.accuracy_train, self.SVC_model.accuracy_train),
-            'Validation Accuracy': (self.DT_model.accuracy_val, self.SGD_model.accuracy_val, self.KNN_model.accuracy_val, self.SVC_model.accuracy_val)
+            'Validation Accuracy (Untuned)': (self.DT_model.accuracy_val[0], self.SGD_model.accuracy_val[0], self.KNN_model.accuracy_val[0], self.SVC_model.accuracy_val[0])
         }
 
         x = np.arange(len(model_types))  # the label locations
@@ -185,11 +175,29 @@ class Compare:
         
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.set_ylabel('Accuracies')
-        ax.set_title('Model Accuracies')
+        ax.set_title('Model Accuracies (Untuned vs. Tuned)')
         ax.set_xticks(x + width, model_types)
-        ax.legend(loc='upper left', ncols=3)
-        ax.set_ylim(0, 250)
+        ax.legend(loc='upper left')
+        ax.set_ylim(0, 1)
         plt.show()
 
-#compare = Compare(knn, svc, dt, sgd)
-#compare.bar_chart_accuracies()
+    def display_models(self):
+        print("DECISION TREE\n")
+        print(f"UNTUNED: {self.DT_model.all_models[0]}")
+        print(f"TUNED: {self.DT_model.all_models[-1]}\n")
+
+        print("K-NEIGHBOURS CLASSIFIER\n")
+        print(f"UNTUNED: {self.KNN_model.all_models[0]}")
+        print(f"TUNED: {self.KNN_model.all_models[-1]}\n")
+
+        print("SUPPORT VECTOR MACHINE\n")
+        print(f"UNTUNED: {self.SVC_model.all_models[0]}")
+        print(f"TUNED: {self.SVC_model.all_models[-1]}\n")
+
+        print("STOCHASTIC GRADIENT DESCENT")
+        print(f"UNTUNED: {self.SGD_model.all_models[0]}")
+        print(f"TUNED: {self.SGD_model.all_models[-1]}\n")
+
+compare = Compare(knn, svc, dt, sgd)
+compare.bar_chart_accuracies()
+compare.display_models()

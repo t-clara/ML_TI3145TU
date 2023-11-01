@@ -60,6 +60,7 @@ class DecisionTreeClassification:
         self.accuracy_val = None
         self.training_time = None
         self.inference_time = None
+        self.all_models = []
 
     def __str__(self):
         return f"DecisionTreeClassifier(max_depth={self.max_depth}, min_samples_leaf={self.min_samples_leaf}, random_state={self.random_state})"
@@ -101,7 +102,7 @@ class DecisionTreeClassification:
             self.accuracy_train.append(train_accuracy[max_depth_optimal - 1][0])
             self.accuracy_val.append(cv_accuracy[max_depth_optimal - 1][0])
         '''
-       
+        self.all_models.append(str(self))
         
     def train(self, labels):
 
@@ -142,6 +143,7 @@ class DecisionTreeClassification:
                 self.training_time.append(np.mean(train_time))
                 self.inference_time.append(np.mean(inference_time))
                 self.accuracy_val.append(cv_score)
+            self.all_models.append(str(self))
         else:
             # Model Construction
             self.model.fit(self.X_train, self.y_train)
@@ -174,6 +176,7 @@ class KNeighborsClassification:
         self.accuracy_val = None
         self.training_time = None
         self.inference_time = None
+        self.all_models = []
     
     def __str__(self) -> str:
         return f"KNeighborsClassifier(n_neighbors={self.n_neighbors}, weights={self.weights})"
@@ -223,34 +226,7 @@ class KNeighborsClassification:
             mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
         print('===========================\n')
         
-        '''
-        for n_neighbors in range(1, max_n_neighbors+1):
-            # Local Model Construction
-            local_model = KNeighborsClassifier(n_neighbors=n_neighbors, weights=self.weights)
-            # Accuracy Assessment 
-            cross_validation_accuracy = cross_val_score(local_model, self.X, self.y, cv=n_folds)
-            cv_accuracy.append(np.mean(cross_validation_accuracy))
-            K_optimal = cv_accuracy.index(max(cv_accuracy)) + 1
-            self.n_neighbors = K_optimal
-            self.model = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights)
-        
-        #Plotting
-        plt.title(f"Validation Accuracy for Various K for weights={self.weights}")
-        plt.plot(np.arange(1, max_n_neighbors+1), validation_accuracy, label=f"Average Cross-Validation Set with n_folds={n_folds}")
-        plt.plot(self.n_neighbors, validation_accuracy[self.n_neighbors - 1], marker="X")
-        plt.xlabel("K")
-        plt.ylabel(f"Average Cross-Validation Set Accuracy with n_folds={n_folds}")
-        plt.legend()
-        plt.show()
-
-        # Plotting Inference Time:
-
-        plt.title('Inference Time')
-        plt.plot(np.arange(1, max_n_neighbors+1), infer_time)
-        plt.xlabel('K')
-        plt.ylabel('Inference Time [s]')
-        plt.show()
-        '''
+        self.all_models.append(str(self))
 
     def train(self):
         print(f"CAUTION: You have just called .train() for KNeighborsClassification, make sure that you fed the training data.")
@@ -293,6 +269,7 @@ class KNeighborsClassification:
                 self.training_time.append(np.mean(train_time))
                 self.inference_time.append(np.mean(infer_time))
                 self.accuracy_val.append(cv_accuracy)
+            self.all_models.append(str(self))
         else:
             # Model Construction
             self.model.fit(self.X_train, self.y_train)
@@ -324,6 +301,7 @@ class SVCClassification:
         self.accuracy_val = None
         self.training_time = None
         self.inference_time = None
+        self.all_models = []
     
     def __str__(self) -> str:
         return f"SVC(C={self.C}, kernel={self.kernel}, degree={self.degree}, gamma={self.gamma}, random_state={self.random_state})"
@@ -379,6 +357,7 @@ class SVCClassification:
                 {np.mean(self.optimize_info['mean_fit_time'])} and the\
                 mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
             print('===========================\n')
+            self.all_models.append(str(self))
 
         else:
             # Parametrization Space
@@ -431,6 +410,7 @@ class SVCClassification:
                 {np.mean(self.optimize_info['mean_fit_time'])} and the\
                 mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
             print('===========================\n')
+            self.all_models.append(str(self))
         
     
     def train(self) -> None:
@@ -477,11 +457,12 @@ class SVCClassification:
                 self.inference_time.append(np.mean(infer_time))
                 self.accuracy_val.append(cv_accuracy)
 
-
             SVC_table = BeautifulTable()
             SVC_table.columns.header = ["", "Average Training Time","Average Inference Time","Validation Accuracy"]
             SVC_table.rows.append(['Optimal SVC', np.mean(train_time), infer_time_average, cv_accuracy])
             print(SVC_table)
+
+            self.all_models.append(str(self))
         else:
             # Model construction
             self.model.fit(self.X_train, self.y_train)
@@ -544,10 +525,11 @@ class SGDClassification:
         self.accuracy_val = None
         self.training_time = None
         self.inference_time = None
+        self.all_models = []
     
     def __str__(self) -> str:
         '''Str representation of SGD'''
-        return f'SGD with alpha = {self.alpha}, eta0 = {self.eta0}, penalty = {self.penalty}, max_iter = {self.max_iter}'
+        return f"SGDClassifier(loss={self.loss}, penalty={self.penalty}, alpha={self.alpha}, max_iter={self.max_iter}, random_state={self.random_state}, learning_rate={self.learning_rate}, eta0={self.eta0}, warm_start={self.warm_start})"
     
     def optimize(self, further_optimize: bool = False):
         '''Optimizes the SGD model'''
@@ -606,6 +588,8 @@ class SGDClassification:
                 mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
             print(f'INFO: Setting the best model as a class attribute')
             print('===========================\n')
+
+            self.all_models.append(str(self))
         else:
             #Tuning parameters
             alpha_list = np.logspace(-4, 4, num=9).tolist() + [0]
@@ -657,6 +641,8 @@ class SGDClassification:
             print(f'INFO: Setting the best model as a class attribute')
             
             print('===========================\n')
+
+            self.all_models.append(str(self))
 
     def train(self, n_batches: int = 300, show_loss: bool = True, show_acc: bool = False) -> None:
         '''Train the SGD classifier with the best parameter'''
@@ -747,6 +733,7 @@ class SGDClassification:
                 plt.title('Error Rate vs Number of Epochs')
                 plt.legend()
                 plt.show()
+            self.all_models.append(str(self))
         else:
             infer_time, sgd_train_loss, sgd_other_loss = [], [], []
             sgd_train_score, sgd_other_score = [], []
@@ -795,6 +782,8 @@ class SGDClassification:
                 plt.legend()
                 plt.show()
 
+            self.all_models.append(str(self))
+
     def display(self):
         SGD_table = BeautifulTable()
         SGD_table.columns.header = ["Model #", "CV Accuracy [%]", "penalty", "alpha", "max_iter", "eta0"]
@@ -817,7 +806,7 @@ class Data_PCA:
         self.y_test = data.y_test
         self.X_cv = data.X_cv
         self.y_cv = data.y_cv
-        self.n_components  = n_components
+        self.n_components = n_components
         self.whiten = whiten
         self.random_state = random_state
         self.threshold = threshold
