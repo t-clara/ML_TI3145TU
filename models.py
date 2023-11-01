@@ -182,15 +182,9 @@ class KNeighborsClassification:
         return f"KNeighborsClassifier(n_neighbors={self.n_neighbors}, weights={self.weights})"
 
     def optimize(self, max_n_neighbors: int, n_folds: int = 5) -> None:
-
-        #validation_accuracy = []
-        n_folds = n_folds
-
         #Parameter space
         n_neighbors_list = range(1, max_n_neighbors+1)
         weights_list = ['uniform', 'distance', None]
-
-
         parameters = {
                 'n_neighbors': n_neighbors_list,
                 'weights': weights_list,
@@ -220,7 +214,7 @@ class KNeighborsClassification:
         self.model = best_model
         print(f"INFO: {str(self)}")
         print(f"INFO: Optimal Model Score = {best_score} with {n_folds}-fold cross-validation.")
-        print(f"INFO: The model took {np.mean(opt_time_stop)} seconds to optimize, the mean fit time was\
+        print(f"INFO: The model took {np.mean(opt_time)} seconds to optimize, the mean fit time was\
             {np.mean(self.optimize_info['mean_fit_time'])} and the\
             mean score time was {np.mean(self.optimize_info['mean_score_time'])}")
         print('===========================\n')
@@ -359,16 +353,10 @@ class SVCClassification:
 
         else:
             # Parametrization Space
-            #C_list = np.logspace(-1, 2, num=4).tolist()
-            #kernel_list = ['linear', 'poly']
-            #degree_list = np.arange(1, 10)
-            #gamma_list = ['scale', 'auto']
-
-            C_list = [0.1]
+            C_list = np.logspace(-1, 2, num=8).tolist()
             kernel_list = ['linear', 'poly']
-            degree_list = np.arange(1, 2)
-            gamma_list = ['scale']
-
+            degree_list = np.arange(1, 8)
+            gamma_list = ['scale', 'auto']
 
             # Dictionary of Parametrization Space
             parameters = {
@@ -590,10 +578,10 @@ class SGDClassification:
             self.all_models.append(str(self))
         else:
             #Tuning parameters
-            alpha_list = np.logspace(-4, 4, num=9).tolist() + [0]
-            eta0_list = np.logspace(-4, 4, num=9).tolist()
+            alpha_list = np.logspace(-4, 4, num=18).tolist() + [0]
+            eta0_list = np.logspace(-4, 4, num=18).tolist()
             penalty_list = ['l1', 'l2', None]
-            max_iter_list = [int(x) for x in np.logspace(2, 5, num=4).tolist()]
+            max_iter_list = [int(x) for x in np.logspace(2, 4, num=6).tolist()]
 
             sgdgs_params = {
             'alpha': alpha_list,

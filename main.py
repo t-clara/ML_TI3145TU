@@ -108,7 +108,7 @@ dummy.train()
 
 knn = KNeighborsClassification(us)
 knn.train()
-knn.optimize(max_n_neighbors=50)
+knn.optimize(max_n_neighbors=100)
 knn.train()
 #print(knn.accuracy_val, knn.training_time, knn.inference_time, knn.accuracy_test)
 #print(knn.accuracy_val, knn.training_time, knn.inference_time)
