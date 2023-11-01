@@ -72,12 +72,10 @@ us.dummy(True)
 us.split(test_size=0.15, cv_size=0.15)
 '''
 pcamodel = Data_PCA(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv, threshold=0.99)
-pcamodel.preprocess()
-pcamodel.remove_nan()
-pcamodel.plot_components()
-pcamodel.change_data(n_components=1)
 us.X = pcamodel.X
 us.y = pcamodel.y
+self.preprocess()
+self.remove_nan()
 us.X_train = pcamodel.X_train
 us.y_train = pcamodel.y_train
 us.X_test = pcamodel.X_test
@@ -107,16 +105,18 @@ mn.preprocessing()
 
 ### K NEIGHBORS ###
 
-knn = KNeighborsClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+knn = KNeighborsClassification(us)
 knn.train()
-knn.optimize(max_n_neighbors=100)
+#print(knn.accuracy_val, knn.training_time, knn.inference_time, knn.accuracy_test)
+knn.optimize(max_n_neighbors=50)
 knn.train()
+print(knn.accuracy_val, knn.training_time, knn.inference_time)
 
 ### SUPPORT VECTOR MACHINE ###
 
 
 
-svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svm.optimize()
 #svm.train()
 #svm.optimize(further_optimize=True)
@@ -124,10 +124,10 @@ svm = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test
 
 ### DECISION TREE ###
 
-dt = DecisionTreeClassification(us.X_train, us.y_train, us.X_cv, us.y_cv)
+#dt = DecisionTreeClassification(us.X_train, us.y_train, us.X_cv, us.y_cv)
 #dt.optimize(us.X_train, us.y_train, us.X_test, us.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
 #dt.optimize(MNIST_8x8.X_train, MNIST_8x8.y_train, MNIST_8x8.X_test, MNIST_8x8.y_test, max_max_depth =  5, max_min_samples_leaf =  5)
-dt.train(us.X_train, us.y_train, labels=col)
+#dt.train(us.X_train, us.y_train, labels=col)
 
 #sgd = SGDClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #sgd.optimize()
@@ -136,9 +136,9 @@ dt.train(us.X_train, us.y_train, labels=col)
 #sgd.train(show_loss=False, show_acc=True)
 #sgd.display()
 
-svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
+#svc = SVCClassification(us.X, us.y, us.X_train, us.y_train, us.X_test, us.y_test, us.X_cv, us.y_cv)
 #svc.optimize()
-svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
+#svc.train(us.X_train, us.y_train, us.X_test, us.y_test)
 
 class Compare:
     def __init__(self, dummy_model, DT_model, KNN_model, SVC_model, SGD_model) -> None:
@@ -191,5 +191,5 @@ class Compare:
         ax.set_ylim(0, 250)
         plt.show()
 
-compare = Compare(knn, svc, dt, sgd)
-compare.bar_chart_accuracies()
+#compare = Compare(knn, svc, dt, sgd)
+#compare.bar_chart_accuracies()
