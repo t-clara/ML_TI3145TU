@@ -20,7 +20,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import cross_val_score, GridSearchCV, ShuffleSplit, cross_validate
+from sklearn.model_selection import cross_val_score, GridSearchCV, ShuffleSplit, cross_validate, RandomizedSearchCV
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import log_loss, accuracy_score
 from sklearn import tree
@@ -350,9 +350,9 @@ class SVCClassification:
 
         else:
             # Parametrization Space
-            C_list = np.logspace(-1, 2, num=8).tolist()
+            C_list = np.logspace(-3, 1, num=5).tolist()
             kernel_list = ['linear', 'poly']
-            degree_list = np.arange(1, 8)
+            degree_list = np.arange(1, 4)
             gamma_list = ['scale', 'auto']
 
             # Dictionary of Parametrization Space
@@ -366,7 +366,7 @@ class SVCClassification:
 
             # Grid Search Construction
             local_model = SVC()
-            gs = GridSearchCV(local_model, parameters, cv=n_folds, verbose=10, n_jobs=-1)
+            gs = RandomizedSearchCV(local_model, parameters, n_iter=20, cv=n_folds, verbose=10, n_jobs=-1, random_state=self.random_state)
             infer_time = []
             #Setting up the optimization with GridSearch
             infer_time_start = time.perf_counter()
